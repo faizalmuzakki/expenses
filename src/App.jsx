@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { PlusCircle, Trash2, Edit2, X, Check, TrendingUp, Calendar, Tag } from 'lucide-react';
+import { PlusCircle, Trash2, Edit2, X, Check, TrendingUp, Calendar, Tag, LogOut } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import Login from './Login';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [expenses, setExpenses] = useState([]);
   const [categories, setCategories] = useState([]);
   const [stats, setStats] = useState({ total: 0, count: 0, byCategory: [] });
@@ -15,9 +17,29 @@ function App() {
     endDate: new Date().toISOString().split('T')[0]
   });
 
+  // Check if already authenticated
   useEffect(() => {
-    fetchData();
-  }, [dateRange]);
+    const auth = localStorage.getItem('expense_auth');
+    if (auth) {
+      try {
+        const parsed = JSON.parse(auth);
+        if (parsed.authenticated) {
+          setIsAuthenticated(true);
+        }
+      } catch { }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchData();
+    }
+  }, [dateRange, isAuthenticated]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('expense_auth');
+    setIsAuthenticated(false);
+  };
 
   async function fetchData() {
     setLoading(true);
@@ -27,7 +49,7 @@ function App() {
         fetch(`${API_URL}/api/categories`),
         fetch(`${API_URL}/api/stats/summary?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`)
       ]);
-      
+
       setExpenses(await expRes.json());
       setCategories(await catRes.json());
       setStats(await statsRes.json());
@@ -45,11 +67,23 @@ function App() {
     }).format(amount);
   };
 
+  // Show login if not authenticated
+  if (!isAuthenticated) {
+    return <Login onLogin={() => setIsAuthenticated(true)} />;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-900">💰 Expense Tracker</h1>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 text-gray-500 hover:text-red-600 transition-colors"
+          >
+            <LogOut className="w-5 h-5" />
+            Logout
+          </button>
         </div>
       </header>
 
@@ -60,11 +94,10 @@ function App() {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-3 font-medium capitalize transition-colors ${
-                  activeTab === tab 
-                    ? 'text-blue-600 border-b-2 border-blue-600' 
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
+                className={`px-4 py-3 font-medium capitalize transition-colors ${activeTab === tab
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-gray-500 hover:text-gray-700'
+                  }`}
               >
                 {tab}
               </button>
@@ -103,15 +136,15 @@ function App() {
               <Dashboard stats={stats} formatCurrency={formatCurrency} />
             )}
             {activeTab === 'expenses' && (
-              <ExpenseList 
-                expenses={expenses} 
+              <ExpenseList
+                expenses={expenses}
                 categories={categories}
                 formatCurrency={formatCurrency}
                 onRefresh={fetchData}
               />
             )}
             {activeTab === 'categories' && (
-              <CategoryList 
+              <CategoryList
                 categories={categories}
                 onRefresh={fetchData}
               />
@@ -200,7 +233,7 @@ function Dashboard({ stats, formatCurrency }) {
           {chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={chartData} layout="vertical">
-                <XAxis type="number" tickFormatter={(v) => `${(v/1000).toFixed(0)}k`} />
+                <XAxis type="number" tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
                 <YAxis type="category" dataKey="name" width={100} />
                 <Tooltip formatter={(value) => formatCurrency(value)} />
                 <Bar dataKey="value" radius={[0, 4, 4, 0]}>
@@ -234,10 +267,10 @@ function ExpenseList({ expenses, categories, formatCurrency, onRefresh }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const url = editingId 
+    const url = editingId
       ? `${API_URL}/api/expenses/${editingId}`
       : `${API_URL}/api/expenses`;
-    
+
     await fetch(url, {
       method: editingId ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -395,7 +428,7 @@ function ExpenseList({ expenses, categories, formatCurrency, onRefresh }) {
                   </td>
                   <td className="px-4 py-3">
                     {expense.category_name ? (
-                      <span 
+                      <span
                         className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm"
                         style={{ backgroundColor: expense.category_color + '20', color: expense.category_color }}
                       >
@@ -439,10 +472,10 @@ function CategoryList({ categories, onRefresh }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const url = editingId 
+    const url = editingId
       ? `${API_URL}/api/categories/${editingId}`
       : `${API_URL}/api/categories`;
-    
+
     await fetch(url, {
       method: editingId ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -547,12 +580,12 @@ function CategoryList({ categories, onRefresh }) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {categories.map(category => (
-          <div 
-            key={category.id} 
+          <div
+            key={category.id}
             className="bg-white rounded-xl shadow-sm p-4 border flex items-center justify-between"
           >
             <div className="flex items-center gap-3">
-              <div 
+              <div
                 className="w-10 h-10 rounded-lg flex items-center justify-center text-xl"
                 style={{ backgroundColor: category.color + '20' }}
               >
