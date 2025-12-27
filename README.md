@@ -1,6 +1,6 @@
-# Expense Tracker Dashboard
+# Finance Tracker Dashboard
 
-A beautiful React dashboard for tracking expenses, designed to work with the self-hosted Expense Tracker API.
+A beautiful React dashboard for tracking expenses and income, designed to work with the self-hosted Expense Tracker API.
 
 ## Tech Stack
 
@@ -40,8 +40,31 @@ npm run dev
 
 ## Features
 
-- 📈 Expense charts and analytics
-- 📋 Transaction history
-- 🏷️ Category breakdown
+- 📈 **Dashboard**
+  - Income, Expenses, and Net Balance cards
+  - Income vs Expenses comparison charts
+  - Separate category breakdowns for income and expenses
+  - Top expense categories and income sources bar charts
+
+- 📋 **Transaction History**
+  - Filter by type (All / Expenses / Income)
+  - Add income or expense with dedicated buttons
+  - Visual distinction (green for income, red for expenses)
+  - Type-filtered category selection in forms
+
+- 🏷️ **Category Management**
+  - Separate income and expense categories
+  - Filter categories by type
+  - Color-coded category cards
+  - Grouped view when showing all categories
+
 - 📅 Date range filtering
 - 🌙 Dark mode support
+- 🔐 Authentication
+
+## API Compatibility
+
+This dashboard is designed to work with the Expense Tracker API that supports:
+- Transaction types (`expense` / `income`)
+- Category types (`expense` / `income`)
+- Stats endpoints with income/expense breakdown
