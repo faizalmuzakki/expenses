@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { PlusCircle, Trash2, Edit2, X, Check, TrendingUp, TrendingDown, Wallet, Calendar, Tag, LogOut, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
+import { PlusCircle, Trash2, Edit2, X, Check, TrendingUp, TrendingDown, Wallet, Calendar, Tag, LogOut, ArrowUpCircle, ArrowDownCircle, Image, Eye } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import Login from './Login';
 
@@ -9,12 +9,12 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [expenses, setExpenses] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [stats, setStats] = useState({ 
-    income: 0, 
-    expenses: 0, 
-    net: 0, 
-    count: 0, 
-    byCategory: [] 
+  const [stats, setStats] = useState({
+    income: 0,
+    expenses: 0,
+    net: 0,
+    count: 0,
+    byCategory: []
   });
   const [activeTab, setActiveTab] = useState('dashboard');
   const [loading, setLoading] = useState(true);
@@ -382,6 +382,7 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [typeFilter, setTypeFilter] = useState('all');
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [form, setForm] = useState({
     amount: '',
     description: '',
@@ -397,8 +398,8 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
   const filteredCategories = categories.filter(cat => cat.type === form.type);
 
   // Filter transactions based on type filter
-  const filteredTransactions = typeFilter === 'all' 
-    ? expenses 
+  const filteredTransactions = typeFilter === 'all'
+    ? expenses
     : expenses.filter(e => e.type === typeFilter);
 
   const handleSubmit = async (e) => {
@@ -423,7 +424,8 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
     onRefresh();
   };
 
-  const handleEdit = (transaction) => {
+  const handleEdit = (transaction, e) => {
+    e?.stopPropagation();
     setForm({
       amount: transaction.amount,
       description: transaction.description || '',
@@ -434,11 +436,14 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
     });
     setEditingId(transaction.id);
     setShowForm(true);
+    setSelectedTransaction(null);
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id, e) => {
+    e?.stopPropagation();
     if (!confirm('Delete this transaction?')) return;
     await fetch(`${API_URL}/api/expenses/${id}`, { method: 'DELETE' });
+    setSelectedTransaction(null);
     onRefresh();
   };
 
@@ -446,8 +451,147 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
     setForm(prev => ({ ...prev, type: newType, category_id: '' }));
   };
 
+  const handleRowClick = (transaction) => {
+    setSelectedTransaction(transaction);
+  };
+
   return (
     <div className="space-y-4">
+      {/* Transaction Detail Modal */}
+      {selectedTransaction && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedTransaction(null)}>
+          <div
+            className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className={`p-6 border-b ${selectedTransaction.type === 'income' ? 'bg-green-50' : 'bg-red-50'}`}>
+              <div className="flex justify-between items-start">
+                <div className="flex items-center gap-3">
+                  {selectedTransaction.type === 'income' ? (
+                    <div className="p-3 bg-green-100 rounded-xl">
+                      <ArrowUpCircle className="w-8 h-8 text-green-600" />
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-red-100 rounded-xl">
+                      <ArrowDownCircle className="w-8 h-8 text-red-600" />
+                    </div>
+                  )}
+                  <div>
+                    <p className={`text-3xl font-bold ${selectedTransaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                      {selectedTransaction.type === 'income' ? '+' : '-'}{formatCurrency(selectedTransaction.amount)}
+                    </p>
+                    <p className="text-sm text-gray-500 capitalize">{selectedTransaction.type}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedTransaction(null)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4">
+              {/* Receipt Image */}
+              {selectedTransaction.image_url && (
+                <div className="mb-6">
+                  <h4 className="text-sm font-medium text-gray-500 mb-2 flex items-center gap-2">
+                    <Image className="w-4 h-4" />
+                    Receipt Image
+                  </h4>
+                  <div className="border rounded-xl overflow-hidden bg-gray-50">
+                    <img
+                      src={`${API_URL}${selectedTransaction.image_url}`}
+                      alt="Receipt"
+                      className="w-full max-h-96 object-contain"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Details Grid */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <p className="text-sm text-gray-500 mb-1">Date</p>
+                  <p className="font-medium flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-gray-400" />
+                    {selectedTransaction.date}
+                  </p>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <p className="text-sm text-gray-500 mb-1">Category</p>
+                  {selectedTransaction.category_name ? (
+                    <span
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm font-medium"
+                      style={{ backgroundColor: selectedTransaction.category_color + '20', color: selectedTransaction.category_color }}
+                    >
+                      {selectedTransaction.category_icon} {selectedTransaction.category_name}
+                    </span>
+                  ) : (
+                    <p className="text-gray-400">Uncategorized</p>
+                  )}
+                </div>
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <p className="text-sm text-gray-500 mb-1">Description</p>
+                  <p className="font-medium">{selectedTransaction.description || '-'}</p>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <p className="text-sm text-gray-500 mb-1">{selectedTransaction.type === 'income' ? 'Source' : 'Vendor'}</p>
+                  <p className="font-medium">{selectedTransaction.vendor || '-'}</p>
+                </div>
+              </div>
+
+              {/* Source info */}
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-sm text-gray-500 mb-1">Entry Source</p>
+                <p className="font-medium capitalize flex items-center gap-2">
+                  {selectedTransaction.source === 'whatsapp_image' && <Image className="w-4 h-4 text-green-600" />}
+                  {selectedTransaction.source === 'whatsapp' && '💬'}
+                  {selectedTransaction.source === 'manual' && '✏️'}
+                  {selectedTransaction.source?.replace('_', ' ') || 'Manual'}
+                </p>
+              </div>
+
+              {/* Raw text if available */}
+              {selectedTransaction.raw_text && (
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <p className="text-sm text-gray-500 mb-1">Original Message</p>
+                  <p className="text-sm text-gray-600 italic">"{selectedTransaction.raw_text}"</p>
+                </div>
+              )}
+
+              {/* Timestamps */}
+              <div className="text-xs text-gray-400 pt-4 border-t">
+                <p>Created: {new Date(selectedTransaction.created_at).toLocaleString()}</p>
+                {selectedTransaction.updated_at !== selectedTransaction.created_at && (
+                  <p>Updated: {new Date(selectedTransaction.updated_at).toLocaleString()}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 border-t bg-gray-50 flex gap-2 justify-end">
+              <button
+                onClick={(e) => handleEdit(selectedTransaction, e)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Edit2 className="w-4 h-4" />
+                Edit
+              </button>
+              <button
+                onClick={(e) => handleDelete(selectedTransaction.id, e)}
+                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="flex justify-between items-center flex-wrap gap-4">
         <div className="flex items-center gap-2">
           <h2 className="text-xl font-semibold">Transactions</h2>
@@ -457,15 +601,14 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
               <button
                 key={type}
                 onClick={() => setTypeFilter(type)}
-                className={`px-3 py-1 rounded-md text-sm font-medium capitalize transition-colors ${
-                  typeFilter === type
-                    ? type === 'income' 
-                      ? 'bg-green-500 text-white' 
-                      : type === 'expense'
-                        ? 'bg-red-500 text-white'
-                        : 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
+                className={`px-3 py-1 rounded-md text-sm font-medium capitalize transition-colors ${typeFilter === type
+                  ? type === 'income'
+                    ? 'bg-green-500 text-white'
+                    : type === 'expense'
+                      ? 'bg-red-500 text-white'
+                      : 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+                  }`}
               >
                 {type}
               </button>
@@ -502,7 +645,7 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
               {editingId ? 'Edit' : 'Add'} {form.type === 'income' ? 'Income' : 'Expense'}
             </h3>
           </div>
-          
+
           {/* Type Toggle */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
@@ -510,22 +653,20 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
               <button
                 type="button"
                 onClick={() => handleTypeChange('expense')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  form.type === 'expense'
-                    ? 'bg-red-500 text-white'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${form.type === 'expense'
+                  ? 'bg-red-500 text-white'
+                  : 'text-gray-600 hover:text-gray-900'
+                  }`}
               >
                 Expense
               </button>
               <button
                 type="button"
                 onClick={() => handleTypeChange('income')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  form.type === 'income'
-                    ? 'bg-green-500 text-white'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${form.type === 'income'
+                  ? 'bg-green-500 text-white'
+                  : 'text-gray-600 hover:text-gray-900'
+                  }`}
               >
                 Income
               </button>
@@ -594,11 +735,10 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
             <div className="flex gap-2">
               <button
                 type="submit"
-                className={`flex items-center gap-2 text-white px-4 py-2 rounded-lg transition-colors ${
-                  form.type === 'income' 
-                    ? 'bg-green-600 hover:bg-green-700' 
-                    : 'bg-red-600 hover:bg-red-700'
-                }`}
+                className={`flex items-center gap-2 text-white px-4 py-2 rounded-lg transition-colors ${form.type === 'income'
+                  ? 'bg-green-600 hover:bg-green-700'
+                  : 'bg-red-600 hover:bg-red-700'
+                  }`}
               >
                 <Check className="w-5 h-5" />
                 {editingId ? 'Update' : 'Save'}
@@ -637,20 +777,29 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
               </tr>
             ) : (
               filteredTransactions.map(transaction => (
-                <tr key={transaction.id} className="hover:bg-gray-50">
+                <tr
+                  key={transaction.id}
+                  className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={() => handleRowClick(transaction)}
+                >
                   <td className="px-4 py-3 text-sm">{transaction.date}</td>
                   <td className="px-4 py-3">
-                    {transaction.type === 'income' ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                        <ArrowUpCircle className="w-3 h-3" />
-                        Income
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
-                        <ArrowDownCircle className="w-3 h-3" />
-                        Expense
-                      </span>
-                    )}
+                    <div className="flex items-center gap-1">
+                      {transaction.type === 'income' ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                          <ArrowUpCircle className="w-3 h-3" />
+                          Income
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                          <ArrowDownCircle className="w-3 h-3" />
+                          Expense
+                        </span>
+                      )}
+                      {transaction.image_url && (
+                        <Image className="w-4 h-4 text-blue-500" title="Has receipt image" />
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     <div className="font-medium">{transaction.description || '-'}</div>
@@ -668,20 +817,19 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
                       </span>
                     ) : '-'}
                   </td>
-                  <td className={`px-4 py-3 text-right font-medium ${
-                    transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-                  }`}>
+                  <td className={`px-4 py-3 text-right font-medium ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
+                    }`}>
                     {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <button
-                      onClick={() => handleEdit(transaction)}
+                      onClick={(e) => handleEdit(transaction, e)}
                       className="p-1 text-gray-500 hover:text-blue-600"
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => handleDelete(transaction.id)}
+                      onClick={(e) => handleDelete(transaction.id, e)}
                       className="p-1 text-gray-500 hover:text-red-600 ml-2"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -705,8 +853,8 @@ function CategoryList({ categories, onRefresh }) {
 
   const API_URL = import.meta.env.VITE_API_URL || '';
 
-  const filteredCategories = typeFilter === 'all' 
-    ? categories 
+  const filteredCategories = typeFilter === 'all'
+    ? categories
     : categories.filter(c => c.type === typeFilter);
 
   const expenseCategories = filteredCategories.filter(c => c.type === 'expense');
@@ -754,9 +902,8 @@ function CategoryList({ categories, onRefresh }) {
 
   const CategoryCard = ({ category }) => (
     <div
-      className={`bg-white rounded-xl shadow-sm p-4 border-2 flex items-center justify-between ${
-        category.type === 'income' ? 'border-green-200' : 'border-red-200'
-      }`}
+      className={`bg-white rounded-xl shadow-sm p-4 border-2 flex items-center justify-between ${category.type === 'income' ? 'border-green-200' : 'border-red-200'
+        }`}
     >
       <div className="flex items-center gap-3">
         <div
@@ -800,15 +947,14 @@ function CategoryList({ categories, onRefresh }) {
               <button
                 key={type}
                 onClick={() => setTypeFilter(type)}
-                className={`px-3 py-1 rounded-md text-sm font-medium capitalize transition-colors ${
-                  typeFilter === type
-                    ? type === 'income' 
-                      ? 'bg-green-500 text-white' 
-                      : type === 'expense'
-                        ? 'bg-red-500 text-white'
-                        : 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
+                className={`px-3 py-1 rounded-md text-sm font-medium capitalize transition-colors ${typeFilter === type
+                  ? type === 'income'
+                    ? 'bg-green-500 text-white'
+                    : type === 'expense'
+                      ? 'bg-red-500 text-white'
+                      : 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+                  }`}
               >
                 {type}
               </button>
@@ -853,22 +999,20 @@ function CategoryList({ categories, onRefresh }) {
               <button
                 type="button"
                 onClick={() => setForm(prev => ({ ...prev, type: 'expense', color: '#EF4444' }))}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  form.type === 'expense'
-                    ? 'bg-red-500 text-white'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${form.type === 'expense'
+                  ? 'bg-red-500 text-white'
+                  : 'text-gray-600 hover:text-gray-900'
+                  }`}
               >
                 Expense
               </button>
               <button
                 type="button"
                 onClick={() => setForm(prev => ({ ...prev, type: 'income', color: '#10B981' }))}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  form.type === 'income'
-                    ? 'bg-green-500 text-white'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${form.type === 'income'
+                  ? 'bg-green-500 text-white'
+                  : 'text-gray-600 hover:text-gray-900'
+                  }`}
               >
                 Income
               </button>
@@ -911,11 +1055,10 @@ function CategoryList({ categories, onRefresh }) {
             <div className="flex gap-2">
               <button
                 type="submit"
-                className={`flex items-center gap-2 text-white px-4 py-2 rounded-lg transition-colors ${
-                  form.type === 'income' 
-                    ? 'bg-green-600 hover:bg-green-700' 
-                    : 'bg-red-600 hover:bg-red-700'
-                }`}
+                className={`flex items-center gap-2 text-white px-4 py-2 rounded-lg transition-colors ${form.type === 'income'
+                  ? 'bg-green-600 hover:bg-green-700'
+                  : 'bg-red-600 hover:bg-red-700'
+                  }`}
               >
                 <Check className="w-5 h-5" />
                 {editingId ? 'Update' : 'Save'}
