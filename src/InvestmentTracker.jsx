@@ -1,18 +1,32 @@
 import { useState, useEffect } from 'react';
 import {
     PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip,
-    ResponsiveContainer, Legend, LineChart, Line, CartesianGrid
+    ResponsiveContainer, Legend, CartesianGrid
 } from 'recharts';
 import {
     TrendingUp, Settings, PlusCircle, Check, X, RefreshCw,
-    Target, Wallet, Calendar, ArrowRight, Edit2, History,
-    ChevronDown, ChevronUp
+    Target, Wallet, Calendar, Edit2, History, Play, AlertCircle,
+    CheckCircle2, Clock, ArrowRight, ChevronDown, ChevronUp
 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
 // Asset type display config
 const ASSET_CONFIG = {
+    emergency_fund: {
+        name: 'Emergency Fund',
+        shortName: 'Emergency',
+        emoji: '🛡️',
+        color: '#6B7280',
+        gradient: 'from-gray-500 to-gray-600'
+    },
+    pension_fund: {
+        name: 'Pension Fund',
+        shortName: 'Pension',
+        emoji: '🏦',
+        color: '#8B5CF6',
+        gradient: 'from-purple-500 to-purple-600'
+    },
     indonesian_equity: {
         name: 'Indonesian Equity',
         shortName: 'ID Equity',
@@ -36,23 +50,32 @@ const ASSET_CONFIG = {
     }
 };
 
+// Phase display config
+const PHASE_CONFIG = {
+    1: { color: 'amber', icon: '🥇', label: 'Phase 1: Build Gold' },
+    2: { color: 'red', icon: '🇮🇩', label: 'Phase 2: Build Indo Equity' },
+    3: { color: 'green', icon: '⚖️', label: 'Phase 3: Maintenance' }
+};
+
 export default function InvestmentTracker({ formatCurrency }) {
     const [summary, setSummary] = useState(null);
     const [contributionPlan, setContributionPlan] = useState(null);
     const [contributions, setContributions] = useState([]);
+    const [actionItems, setActionItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showSettings, setShowSettings] = useState(false);
     const [showContributeForm, setShowContributeForm] = useState(false);
     const [showEditHoldings, setShowEditHoldings] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
+    const [expandedPhase, setExpandedPhase] = useState(null);
 
     const [config, setConfig] = useState({
         monthly_budget: 5000000,
-        catch_up_phase: true
+        start_date: null
     });
 
     const [contributeForm, setContributeForm] = useState({
-        type: 'indonesian_equity',
+        type: 'gold',
         amount: '',
         date: new Date().toISOString().split('T')[0],
         notes: ''
@@ -67,22 +90,25 @@ export default function InvestmentTracker({ formatCurrency }) {
     async function fetchData() {
         setLoading(true);
         try {
-            const [summaryRes, planRes, contribRes] = await Promise.all([
+            const [summaryRes, planRes, contribRes, actionsRes] = await Promise.all([
                 fetch(`${API_URL}/api/investments/summary`),
                 fetch(`${API_URL}/api/investments/contribution-plan`),
-                fetch(`${API_URL}/api/investments/contributions`)
+                fetch(`${API_URL}/api/investments/contributions`),
+                fetch(`${API_URL}/api/investments/action-items`)
             ]);
 
             const summaryData = await summaryRes.json();
             const planData = await planRes.json();
             const contribData = await contribRes.json();
+            const actionsData = await actionsRes.json();
 
             setSummary(summaryData);
             setContributionPlan(planData);
             setContributions(contribData);
+            setActionItems(actionsData);
             setConfig({
                 monthly_budget: planData.monthlyBudget,
-                catch_up_phase: planData.isInCatchUpPhase
+                start_date: summaryData.startDate
             });
 
             // Initialize holdings form
@@ -91,10 +117,26 @@ export default function InvestmentTracker({ formatCurrency }) {
                 holdingsObj[h.type] = h.current_value;
             });
             setHoldingsForm(holdingsObj);
+
+            // Set default contribute type based on current phase
+            if (planData.currentPhase === 1) {
+                setContributeForm(prev => ({ ...prev, type: 'gold' }));
+            } else if (planData.currentPhase === 2) {
+                setContributeForm(prev => ({ ...prev, type: 'indonesian_equity' }));
+            }
         } catch (error) {
             console.error('Error fetching investment data:', error);
         }
         setLoading(false);
+    }
+
+    async function handleStartPlan() {
+        try {
+            await fetch(`${API_URL}/api/investments/start-plan`, { method: 'POST' });
+            fetchData();
+        } catch (error) {
+            console.error('Error starting plan:', error);
+        }
     }
 
     async function handleSaveConfig() {
@@ -124,7 +166,7 @@ export default function InvestmentTracker({ formatCurrency }) {
             });
             setShowContributeForm(false);
             setContributeForm({
-                type: 'indonesian_equity',
+                type: contributionPlan?.currentPhase === 1 ? 'gold' : 'indonesian_equity',
                 amount: '',
                 date: new Date().toISOString().split('T')[0],
                 notes: ''
@@ -142,7 +184,7 @@ export default function InvestmentTracker({ formatCurrency }) {
                     fetch(`${API_URL}/api/investments/holdings/${type}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ current_value: parseFloat(value) })
+                        body: JSON.stringify({ current_value: parseFloat(value) || 0 })
                     })
                 )
             );
@@ -170,11 +212,13 @@ export default function InvestmentTracker({ formatCurrency }) {
     }
 
     // Prepare chart data
-    const pieData = summary.holdings.map(h => ({
-        name: ASSET_CONFIG[h.type]?.shortName || h.name,
-        value: h.current_value,
-        color: ASSET_CONFIG[h.type]?.color || '#888'
-    })).filter(d => d.value > 0);
+    const pieData = summary.holdings
+        .filter(h => h.current_value > 0)
+        .map(h => ({
+            name: ASSET_CONFIG[h.type]?.shortName || h.name,
+            value: h.current_value,
+            color: ASSET_CONFIG[h.type]?.color || '#888'
+        }));
 
     const allocationComparisonData = summary.holdings.map(h => ({
         name: ASSET_CONFIG[h.type]?.shortName || h.name,
@@ -183,15 +227,18 @@ export default function InvestmentTracker({ formatCurrency }) {
         color: ASSET_CONFIG[h.type]?.color || '#888'
     }));
 
+    const currentPhase = contributionPlan?.currentPhase || 1;
+    const phaseConfig = PHASE_CONFIG[currentPhase];
+
     return (
         <div className="space-y-6">
-            {/* Header with Actions */}
+            {/* Header */}
             <div className="flex flex-wrap justify-between items-center gap-4">
                 <div>
                     <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                         📊 Investment Portfolio
                     </h2>
-                    <p className="text-gray-500 mt-1">50/40/10 Allocation Strategy</p>
+                    <p className="text-gray-500 mt-1">8-Month Investment Action Plan</p>
                 </div>
                 <div className="flex gap-2 flex-wrap">
                     <button
@@ -225,19 +272,56 @@ export default function InvestmentTracker({ formatCurrency }) {
                 </div>
             </div>
 
-            {/* Total Portfolio Value */}
+            {/* Action Items Alert */}
+            {actionItems.length > 0 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                    <h3 className="font-semibold text-amber-800 flex items-center gap-2 mb-3">
+                        <AlertCircle className="w-5 h-5" />
+                        Action Items ({actionItems.length})
+                    </h3>
+                    <div className="space-y-2">
+                        {actionItems.map(item => (
+                            <div key={item.id} className="flex items-start gap-3 bg-white rounded-lg p-3 border border-amber-100">
+                                <div className={`p-1 rounded-full ${item.priority === 'high' ? 'bg-red-100' : 'bg-yellow-100'}`}>
+                                    {item.category === 'setup' ? (
+                                        <Settings className={`w-4 h-4 ${item.priority === 'high' ? 'text-red-600' : 'text-yellow-600'}`} />
+                                    ) : (
+                                        <TrendingUp className={`w-4 h-4 ${item.priority === 'high' ? 'text-red-600' : 'text-yellow-600'}`} />
+                                    )}
+                                </div>
+                                <div className="flex-1">
+                                    <p className="font-medium text-gray-900">{item.title}</p>
+                                    <p className="text-sm text-gray-600">{item.description}</p>
+                                </div>
+                                {item.id === 'start_plan' && (
+                                    <button
+                                        onClick={handleStartPlan}
+                                        className="flex items-center gap-1 bg-green-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-green-700"
+                                    >
+                                        <Play className="w-4 h-4" />
+                                        Start Plan
+                                    </button>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Total Portfolio + Phase Info */}
             <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-xl">
                 <div className="flex flex-wrap justify-between items-start gap-4">
                     <div>
                         <p className="text-slate-400 text-sm mb-1">Total Portfolio Value</p>
                         <p className="text-4xl font-bold">{formatCurrency(summary.totalValue)}</p>
-                        <div className="flex items-center gap-2 mt-2">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${contributionPlan?.isInCatchUpPhase ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'}`}>
-                                {contributionPlan?.isInCatchUpPhase ? '🎯 Catch-up Phase' : '✅ Maintenance Phase'}
+                        <div className="flex items-center gap-2 mt-3">
+                            <span className={`px-3 py-1 rounded-full text-sm font-medium bg-${phaseConfig.color}-500/20 text-${phaseConfig.color}-300 border border-${phaseConfig.color}-500/30`}>
+                                {phaseConfig.icon} {phaseConfig.label}
                             </span>
-                            {contributionPlan?.monthsToTarget && (
-                                <span className="text-slate-400 text-sm">
-                                    ~{contributionPlan.monthsToTarget} months to target
+                            {contributionPlan?.monthsRemaining !== null && contributionPlan?.monthsRemaining > 0 && (
+                                <span className="text-slate-400 text-sm flex items-center gap-1">
+                                    <Clock className="w-4 h-4" />
+                                    {contributionPlan.monthsRemaining} months remaining
                                 </span>
                             )}
                         </div>
@@ -245,82 +329,170 @@ export default function InvestmentTracker({ formatCurrency }) {
                     <div className="text-right">
                         <p className="text-slate-400 text-sm mb-1">Monthly Budget</p>
                         <p className="text-2xl font-semibold">{formatCurrency(config.monthly_budget)}</p>
+                        {config.start_date && (
+                            <p className="text-slate-500 text-sm mt-1">
+                                Started: {new Date(config.start_date).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })}
+                            </p>
+                        )}
                     </div>
                 </div>
             </div>
 
+            {/* Phase Timeline */}
+            <div className="bg-white rounded-xl shadow-sm p-6 border">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-blue-500" />
+                    Investment Timeline
+                </h3>
+                <div className="flex items-center gap-2 overflow-x-auto pb-2">
+                    {[1, 2, 3].map((phase, idx) => {
+                        const isActive = currentPhase === phase;
+                        const isPast = currentPhase > phase;
+                        const phaseInfo = summary.phases?.[phase];
+
+                        return (
+                            <div key={phase} className="flex items-center">
+                                <button
+                                    onClick={() => setExpandedPhase(expandedPhase === phase ? null : phase)}
+                                    className={`flex-shrink-0 px-4 py-3 rounded-xl border-2 transition-all ${isActive
+                                            ? 'border-blue-500 bg-blue-50 shadow-md'
+                                            : isPast
+                                                ? 'border-green-300 bg-green-50'
+                                                : 'border-gray-200 bg-gray-50'
+                                        }`}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        {isPast ? (
+                                            <CheckCircle2 className="w-5 h-5 text-green-500" />
+                                        ) : isActive ? (
+                                            <div className="w-5 h-5 rounded-full bg-blue-500 animate-pulse" />
+                                        ) : (
+                                            <div className="w-5 h-5 rounded-full bg-gray-300" />
+                                        )}
+                                        <div className="text-left">
+                                            <p className={`font-medium ${isActive ? 'text-blue-700' : isPast ? 'text-green-700' : 'text-gray-600'}`}>
+                                                {PHASE_CONFIG[phase].label}
+                                            </p>
+                                            <p className="text-xs text-gray-500">
+                                                {phase === 1 ? 'Months 1-2' : phase === 2 ? 'Months 3-8' : 'Month 9+'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </button>
+                                {idx < 2 && <ArrowRight className="w-5 h-5 text-gray-300 mx-2 flex-shrink-0" />}
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {expandedPhase && summary.phases?.[expandedPhase] && (
+                    <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
+                        <h4 className="font-medium mb-2">{summary.phases[expandedPhase].name}</h4>
+                        <p className="text-sm text-gray-600 mb-3">{summary.phases[expandedPhase].description}</p>
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                            {Object.entries(summary.phases[expandedPhase].allocation).map(([type, pct]) => (
+                                <div key={type} className="text-center p-2 bg-white rounded border">
+                                    <span className="text-lg">{ASSET_CONFIG[type]?.emoji}</span>
+                                    <p className="text-xs text-gray-500">{ASSET_CONFIG[type]?.shortName}</p>
+                                    <p className={`font-bold ${pct > 0 ? 'text-green-600' : 'text-gray-400'}`}>{pct}%</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Current Month Contribution Plan */}
+            <div className="bg-white rounded-xl shadow-sm p-6 border">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-green-500" />
+                    This Month's Contribution Plan
+                </h3>
+
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                    {contributionPlan?.contributions?.map(contrib => {
+                        const assetConfig = ASSET_CONFIG[contrib.type];
+                        const isActive = contrib.contributionPercentage > 0;
+
+                        return (
+                            <div
+                                key={contrib.type}
+                                className={`rounded-xl p-4 border-2 transition-all ${isActive
+                                        ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-200'
+                                        : 'bg-gray-50 border-gray-100 opacity-60'
+                                    }`}
+                            >
+                                <div className="flex items-center gap-2 mb-2">
+                                    <span className="text-xl">{assetConfig?.emoji}</span>
+                                    <span className="text-sm font-medium text-gray-700">{assetConfig?.shortName}</span>
+                                </div>
+                                <p className={`text-xl font-bold ${isActive ? 'text-green-600' : 'text-gray-400'}`}>
+                                    {formatCurrency(contrib.suggestedContribution)}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    {contrib.contributionPercentage}% of budget
+                                </p>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
             {/* Holdings Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                 {summary.holdings.map(holding => {
                     const assetConfig = ASSET_CONFIG[holding.type];
                     const target = summary.targets[holding.type] || 0;
                     const diff = holding.percentage - target;
-                    const contribution = contributionPlan?.contributions?.find(c => c.type === holding.type);
 
                     return (
                         <div
                             key={holding.type}
                             className="bg-white rounded-xl shadow-sm border overflow-hidden"
                         >
-                            <div className={`bg-gradient-to-r ${assetConfig?.gradient} p-4 text-white`}>
-                                <div className="flex items-center gap-2 mb-2">
-                                    <span className="text-2xl">{assetConfig?.emoji}</span>
-                                    <span className="font-semibold">{assetConfig?.name || holding.name}</span>
+                            <div className={`bg-gradient-to-r ${assetConfig?.gradient} p-3 text-white`}>
+                                <div className="flex items-center gap-2 mb-1">
+                                    <span className="text-xl">{assetConfig?.emoji}</span>
+                                    <span className="font-medium text-sm">{assetConfig?.shortName}</span>
                                 </div>
-                                <p className="text-2xl font-bold">{formatCurrency(holding.current_value)}</p>
-                                <p className="text-white/80 text-sm mt-1">{holding.platform}</p>
+                                <p className="text-xl font-bold">{formatCurrency(holding.current_value)}</p>
                             </div>
-                            <div className="p-4 space-y-3">
-                                <div className="flex justify-between items-center">
+                            <div className="p-3 space-y-2">
+                                <div className="flex justify-between text-sm">
                                     <span className="text-gray-500">Current</span>
-                                    <span className="font-semibold">{holding.percentage.toFixed(1)}%</span>
+                                    <span className="font-medium">{holding.percentage.toFixed(1)}%</span>
                                 </div>
-                                <div className="flex justify-between items-center">
+                                <div className="flex justify-between text-sm">
                                     <span className="text-gray-500">Target</span>
-                                    <span className="font-medium text-gray-700">{target}%</span>
+                                    <span className="text-gray-700">{target}%</span>
                                 </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="text-gray-500">Difference</span>
-                                    <span className={`font-medium ${diff >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                    <div
+                                        className={`h-full rounded-full bg-gradient-to-r ${assetConfig?.gradient}`}
+                                        style={{ width: `${Math.min(100, target > 0 ? (holding.percentage / target) * 100 : 0)}%` }}
+                                    />
+                                </div>
+                                <div className="text-center">
+                                    <span className={`text-xs font-medium ${diff >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                         {diff >= 0 ? '+' : ''}{diff.toFixed(1)}%
                                     </span>
                                 </div>
-                                {/* Progress bar */}
-                                <div className="relative pt-1">
-                                    <div className="flex items-center justify-between text-xs mb-1">
-                                        <span className="text-gray-400">Allocation</span>
-                                    </div>
-                                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                                        <div
-                                            className={`h-full rounded-full bg-gradient-to-r ${assetConfig?.gradient}`}
-                                            style={{ width: `${Math.min(100, (holding.percentage / target) * 100)}%` }}
-                                        ></div>
-                                    </div>
-                                </div>
-                                {contribution && contribution.suggestedContribution > 0 && (
-                                    <div className="pt-2 border-t">
-                                        <p className="text-xs text-gray-500">Suggested contribution</p>
-                                        <p className="font-semibold text-green-600">
-                                            {formatCurrency(contribution.suggestedContribution)}
-                                        </p>
-                                    </div>
-                                )}
                             </div>
                         </div>
                     );
                 })}
             </div>
 
-            {/* Charts Section */}
+            {/* Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Current Allocation Pie Chart */}
+                {/* Current Allocation Pie */}
                 <div className="bg-white rounded-xl shadow-sm p-6 border">
                     <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                         <Wallet className="w-5 h-5 text-blue-500" />
                         Current Allocation
                     </h3>
                     {pieData.length > 0 ? (
-                        <ResponsiveContainer width="100%" height={280}>
+                        <ResponsiveContainer width="100%" height={250}>
                             <PieChart>
                                 <Pie
                                     data={pieData}
@@ -328,9 +500,10 @@ export default function InvestmentTracker({ formatCurrency }) {
                                     nameKey="name"
                                     cx="50%"
                                     cy="50%"
-                                    outerRadius={100}
-                                    innerRadius={60}
+                                    outerRadius={90}
+                                    innerRadius={50}
                                     label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                    labelLine={false}
                                 >
                                     {pieData.map((entry, index) => (
                                         <Cell key={index} fill={entry.color} />
@@ -344,17 +517,17 @@ export default function InvestmentTracker({ formatCurrency }) {
                     )}
                 </div>
 
-                {/* Current vs Target Comparison */}
+                {/* Current vs Target */}
                 <div className="bg-white rounded-xl shadow-sm p-6 border">
                     <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                         <Target className="w-5 h-5 text-purple-500" />
-                        Current vs Target Allocation
+                        Current vs Target (Final)
                     </h3>
-                    <ResponsiveContainer width="100%" height={280}>
+                    <ResponsiveContainer width="100%" height={250}>
                         <BarChart data={allocationComparisonData} layout="vertical">
                             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                            <XAxis type="number" domain={[0, 60]} tickFormatter={(v) => `${v}%`} />
-                            <YAxis type="category" dataKey="name" width={80} />
+                            <XAxis type="number" domain={[0, 35]} tickFormatter={(v) => `${v}%`} />
+                            <YAxis type="category" dataKey="name" width={70} tick={{ fontSize: 12 }} />
                             <Tooltip formatter={(value) => `${value.toFixed(1)}%`} />
                             <Legend />
                             <Bar dataKey="current" name="Current" fill="#3B82F6" radius={[0, 4, 4, 0]} />
@@ -362,61 +535,6 @@ export default function InvestmentTracker({ formatCurrency }) {
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
-            </div>
-
-            {/* Contribution Plan */}
-            <div className="bg-white rounded-xl shadow-sm p-6 border">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-green-500" />
-                    Monthly Contribution Plan
-                    {contributionPlan?.isInCatchUpPhase && (
-                        <span className="ml-2 px-2 py-1 bg-amber-100 text-amber-700 text-xs rounded-full">
-                            Catch-up Mode
-                        </span>
-                    )}
-                </h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {contributionPlan?.contributions?.map(contrib => {
-                        const assetConfig = ASSET_CONFIG[contrib.type];
-                        return (
-                            <div
-                                key={contrib.type}
-                                className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border"
-                            >
-                                <div className="flex items-center gap-2 mb-3">
-                                    <span className="text-xl">{assetConfig?.emoji}</span>
-                                    <span className="font-medium text-gray-700">{assetConfig?.shortName}</span>
-                                </div>
-                                <p className="text-2xl font-bold text-gray-900">
-                                    {formatCurrency(contrib.suggestedContribution)}
-                                </p>
-                                <p className="text-sm text-gray-500 mt-1">
-                                    {contrib.contributionPercentage.toFixed(0)}% of budget
-                                </p>
-                                {contrib.suggestedContribution === 0 && (
-                                    <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
-                                        ⏸️ Paused during catch-up
-                                    </p>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
-
-                {contributionPlan?.isInCatchUpPhase && (
-                    <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                        <p className="text-sm text-amber-800">
-                            <strong>🎯 Catch-up Phase Active:</strong> You're currently underweight on some assets.
-                            Focus your contributions on the underweight assets until your allocation is balanced.
-                            {contributionPlan?.monthsToTarget && (
-                                <span className="block mt-1">
-                                    Estimated time to reach target allocation: <strong>~{contributionPlan.monthsToTarget} months</strong>
-                                </span>
-                            )}
-                        </p>
-                    </div>
-                )}
             </div>
 
             {/* Contribution History */}
@@ -446,7 +564,7 @@ export default function InvestmentTracker({ formatCurrency }) {
                                                 <td className="px-4 py-3">
                                                     <span className="flex items-center gap-2">
                                                         <span>{assetConfig?.emoji}</span>
-                                                        <span className="text-sm">{assetConfig?.shortName}</span>
+                                                        <span className="text-sm">{assetConfig?.shortName || c.type}</span>
                                                     </span>
                                                 </td>
                                                 <td className="px-4 py-3 text-right font-medium text-green-600">
@@ -490,17 +608,19 @@ export default function InvestmentTracker({ formatCurrency }) {
                                 />
                             </div>
 
-                            <div className="flex items-center gap-3">
-                                <input
-                                    type="checkbox"
-                                    id="catchUpPhase"
-                                    checked={config.catch_up_phase}
-                                    onChange={(e) => setConfig(prev => ({ ...prev, catch_up_phase: e.target.checked }))}
-                                    className="w-5 h-5 rounded"
-                                />
-                                <label htmlFor="catchUpPhase" className="text-sm text-gray-700">
-                                    Enable catch-up phase (prioritize underweight assets)
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Plan Start Date
                                 </label>
+                                <input
+                                    type="date"
+                                    value={config.start_date || ''}
+                                    onChange={(e) => setConfig(prev => ({ ...prev, start_date: e.target.value }))}
+                                    className="w-full border rounded-lg px-4 py-3"
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                    This determines which phase you're in (Phase 1: months 1-2, Phase 2: months 3-8, Phase 3: month 9+)
+                                </p>
                             </div>
                         </div>
 
@@ -526,7 +646,7 @@ export default function InvestmentTracker({ formatCurrency }) {
             {/* Log Contribution Modal */}
             {showContributeForm && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowContributeForm(false)}>
-                    <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
+                    <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6" onClick={e => e.stopPropagation()}>
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-xl font-bold flex items-center gap-2">
                                 <PlusCircle className="w-6 h-6 text-green-500" />
@@ -540,19 +660,19 @@ export default function InvestmentTracker({ formatCurrency }) {
                         <form onSubmit={handleContribute} className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Asset Type</label>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {Object.entries(ASSET_CONFIG).map(([type, config]) => (
+                                <div className="grid grid-cols-5 gap-2">
+                                    {Object.entries(ASSET_CONFIG).map(([type, cfg]) => (
                                         <button
                                             key={type}
                                             type="button"
                                             onClick={() => setContributeForm(prev => ({ ...prev, type }))}
-                                            className={`p-3 rounded-xl border-2 transition-all ${contributeForm.type === type
+                                            className={`p-2 rounded-xl border-2 transition-all ${contributeForm.type === type
                                                     ? 'border-blue-500 bg-blue-50'
                                                     : 'border-gray-200 hover:border-gray-300'
                                                 }`}
                                         >
-                                            <span className="text-2xl block mb-1">{config.emoji}</span>
-                                            <span className="text-xs text-gray-600">{config.shortName}</span>
+                                            <span className="text-xl block">{cfg.emoji}</span>
+                                            <span className="text-xs text-gray-600 block truncate">{cfg.shortName}</span>
                                         </button>
                                     ))}
                                 </div>
@@ -566,30 +686,31 @@ export default function InvestmentTracker({ formatCurrency }) {
                                     value={contributeForm.amount}
                                     onChange={(e) => setContributeForm(prev => ({ ...prev, amount: e.target.value }))}
                                     className="w-full border rounded-lg px-4 py-3 text-lg"
-                                    placeholder="3500000"
+                                    placeholder="5000000"
                                 />
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
-                                <input
-                                    type="date"
-                                    required
-                                    value={contributeForm.date}
-                                    onChange={(e) => setContributeForm(prev => ({ ...prev, date: e.target.value }))}
-                                    className="w-full border rounded-lg px-4 py-3"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Notes (optional)</label>
-                                <input
-                                    type="text"
-                                    value={contributeForm.notes}
-                                    onChange={(e) => setContributeForm(prev => ({ ...prev, notes: e.target.value }))}
-                                    className="w-full border rounded-lg px-4 py-3"
-                                    placeholder="Monthly DCA"
-                                />
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                                    <input
+                                        type="date"
+                                        required
+                                        value={contributeForm.date}
+                                        onChange={(e) => setContributeForm(prev => ({ ...prev, date: e.target.value }))}
+                                        className="w-full border rounded-lg px-4 py-3"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                                    <input
+                                        type="text"
+                                        value={contributeForm.notes}
+                                        onChange={(e) => setContributeForm(prev => ({ ...prev, notes: e.target.value }))}
+                                        className="w-full border rounded-lg px-4 py-3"
+                                        placeholder="Monthly DCA"
+                                    />
+                                </div>
                             </div>
 
                             <div className="flex gap-3 pt-2">
@@ -616,7 +737,7 @@ export default function InvestmentTracker({ formatCurrency }) {
             {/* Edit Holdings Modal */}
             {showEditHoldings && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowEditHoldings(false)}>
-                    <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
+                    <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-xl font-bold flex items-center gap-2">
                                 <Edit2 className="w-6 h-6 text-blue-500" />
@@ -634,7 +755,7 @@ export default function InvestmentTracker({ formatCurrency }) {
                                     <div key={holding.type}>
                                         <label className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
                                             <span>{assetConfig?.emoji}</span>
-                                            {assetConfig?.name} ({holding.platform})
+                                            {assetConfig?.name}
                                         </label>
                                         <input
                                             type="number"
@@ -645,6 +766,7 @@ export default function InvestmentTracker({ formatCurrency }) {
                                             }))}
                                             className="w-full border rounded-lg px-4 py-3 text-lg"
                                         />
+                                        <p className="text-xs text-gray-500 mt-1">{holding.platform}</p>
                                     </div>
                                 );
                             })}
