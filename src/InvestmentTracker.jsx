@@ -4,15 +4,15 @@ import {
     ResponsiveContainer, Legend, CartesianGrid
 } from 'recharts';
 import {
-    TrendingUp, Settings, PlusCircle, Check, X, RefreshCw,
+    TrendingUp, Settings, PlusCircle, Check, X,
     Target, Wallet, Calendar, Edit2, History, Play, AlertCircle,
-    CheckCircle2, Clock, ArrowRight, ChevronDown, ChevronUp
+    CheckCircle2, Clock, ArrowRight, Layers
 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
-// Asset type display config
-const ASSET_CONFIG = {
+// Individual holding display config
+const HOLDING_CONFIG = {
     emergency_fund: {
         name: 'Emergency Fund',
         shortName: 'Emergency',
@@ -29,14 +29,14 @@ const ASSET_CONFIG = {
     },
     indonesian_equity: {
         name: 'Indonesian Equity',
-        shortName: 'ID Equity',
-        emoji: '🇮🇩',
+        shortName: 'Indo Equity',
+        emoji: '📈',
         color: '#EF4444',
         gradient: 'from-red-500 to-red-600'
     },
     international_equity: {
-        name: 'International Equity',
-        shortName: 'Intl Equity',
+        name: 'International',
+        shortName: 'International',
         emoji: '🌍',
         color: '#3B82F6',
         gradient: 'from-blue-500 to-blue-600'
@@ -50,10 +50,35 @@ const ASSET_CONFIG = {
     }
 };
 
-// Phase display config
+// Allocation group config (for 50/40/10)
+const ALLOCATION_CONFIG = {
+    indonesian: {
+        name: 'Indonesian',
+        emoji: '🇮🇩',
+        color: '#EF4444',
+        gradient: 'from-red-500 to-red-600',
+        includes: ['Emergency Fund', 'Pension Fund', 'Indo Equity']
+    },
+    international: {
+        name: 'International',
+        emoji: '🌍',
+        color: '#3B82F6',
+        gradient: 'from-blue-500 to-blue-600',
+        includes: ['Gotrade']
+    },
+    gold: {
+        name: 'Gold',
+        emoji: '🥇',
+        color: '#F59E0B',
+        gradient: 'from-amber-400 to-amber-500',
+        includes: ['Gold']
+    }
+};
+
+// Phase config
 const PHASE_CONFIG = {
     1: { color: 'amber', icon: '🥇', label: 'Phase 1: Build Gold' },
-    2: { color: 'red', icon: '🇮🇩', label: 'Phase 2: Build Indo Equity' },
+    2: { color: 'red', icon: '🇮🇩', label: 'Phase 2: Build Indo' },
     3: { color: 'green', icon: '⚖️', label: 'Phase 3: Maintenance' }
 };
 
@@ -67,7 +92,7 @@ export default function InvestmentTracker({ formatCurrency }) {
     const [showContributeForm, setShowContributeForm] = useState(false);
     const [showEditHoldings, setShowEditHoldings] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
-    const [expandedPhase, setExpandedPhase] = useState(null);
+    const [viewMode, setViewMode] = useState('allocation'); // 'allocation' or 'detailed'
 
     const [config, setConfig] = useState({
         monthly_budget: 5000000,
@@ -111,14 +136,12 @@ export default function InvestmentTracker({ formatCurrency }) {
                 start_date: summaryData.startDate
             });
 
-            // Initialize holdings form
             const holdingsObj = {};
             summaryData.holdings.forEach(h => {
                 holdingsObj[h.type] = h.current_value;
             });
             setHoldingsForm(holdingsObj);
 
-            // Set default contribute type based on current phase
             if (planData.currentPhase === 1) {
                 setContributeForm(prev => ({ ...prev, type: 'gold' }));
             } else if (planData.currentPhase === 2) {
@@ -211,21 +234,33 @@ export default function InvestmentTracker({ formatCurrency }) {
         );
     }
 
-    // Prepare chart data
-    const pieData = summary.holdings
-        .filter(h => h.current_value > 0)
-        .map(h => ({
-            name: ASSET_CONFIG[h.type]?.shortName || h.name,
-            value: h.current_value,
-            color: ASSET_CONFIG[h.type]?.color || '#888'
+    // Prepare 50/40/10 allocation chart data
+    const allocationPieData = (summary.allocations || [])
+        .filter(a => a.value > 0)
+        .map(a => ({
+            name: a.name,
+            value: a.value,
+            color: a.color,
+            percentage: a.percentage,
+            target: a.target
         }));
 
-    const allocationComparisonData = summary.holdings.map(h => ({
-        name: ASSET_CONFIG[h.type]?.shortName || h.name,
-        current: h.percentage,
-        target: summary.targets[h.type] || 0,
-        color: ASSET_CONFIG[h.type]?.color || '#888'
+    // Prepare allocation vs target comparison
+    const allocationComparisonData = (summary.allocations || []).map(a => ({
+        name: a.name,
+        current: a.percentage,
+        target: a.target,
+        color: a.color
     }));
+
+    // Detailed holdings pie data
+    const holdingsPieData = summary.holdings
+        .filter(h => h.current_value > 0)
+        .map(h => ({
+            name: HOLDING_CONFIG[h.type]?.shortName || h.name,
+            value: h.current_value,
+            color: HOLDING_CONFIG[h.type]?.color || '#888'
+        }));
 
     const currentPhase = contributionPlan?.currentPhase || 1;
     const phaseConfig = PHASE_CONFIG[currentPhase];
@@ -238,7 +273,7 @@ export default function InvestmentTracker({ formatCurrency }) {
                     <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                         📊 Investment Portfolio
                     </h2>
-                    <p className="text-gray-500 mt-1">8-Month Investment Action Plan</p>
+                    <p className="text-gray-500 mt-1">50/40/10 Allocation Strategy</p>
                 </div>
                 <div className="flex gap-2 flex-wrap">
                     <button
@@ -272,7 +307,7 @@ export default function InvestmentTracker({ formatCurrency }) {
                 </div>
             </div>
 
-            {/* Action Items Alert */}
+            {/* Action Items */}
             {actionItems.length > 0 && (
                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
                     <h3 className="font-semibold text-amber-800 flex items-center gap-2 mb-3">
@@ -308,20 +343,20 @@ export default function InvestmentTracker({ formatCurrency }) {
                 </div>
             )}
 
-            {/* Total Portfolio + Phase Info */}
+            {/* Total Portfolio + Phase */}
             <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-xl">
                 <div className="flex flex-wrap justify-between items-start gap-4">
                     <div>
                         <p className="text-slate-400 text-sm mb-1">Total Portfolio Value</p>
                         <p className="text-4xl font-bold">{formatCurrency(summary.totalValue)}</p>
                         <div className="flex items-center gap-2 mt-3">
-                            <span className={`px-3 py-1 rounded-full text-sm font-medium bg-${phaseConfig.color}-500/20 text-${phaseConfig.color}-300 border border-${phaseConfig.color}-500/30`}>
+                            <span className="px-3 py-1 rounded-full text-sm font-medium bg-white/10 border border-white/20">
                                 {phaseConfig.icon} {phaseConfig.label}
                             </span>
                             {contributionPlan?.monthsRemaining !== null && contributionPlan?.monthsRemaining > 0 && (
                                 <span className="text-slate-400 text-sm flex items-center gap-1">
                                     <Clock className="w-4 h-4" />
-                                    {contributionPlan.monthsRemaining} months remaining
+                                    {contributionPlan.monthsRemaining} months left
                                 </span>
                             )}
                         </div>
@@ -329,13 +364,195 @@ export default function InvestmentTracker({ formatCurrency }) {
                     <div className="text-right">
                         <p className="text-slate-400 text-sm mb-1">Monthly Budget</p>
                         <p className="text-2xl font-semibold">{formatCurrency(config.monthly_budget)}</p>
-                        {config.start_date && (
-                            <p className="text-slate-500 text-sm mt-1">
-                                Started: {new Date(config.start_date).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })}
-                            </p>
-                        )}
                     </div>
                 </div>
+            </div>
+
+            {/* 50/40/10 Allocation Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {(summary.allocations || []).map(alloc => {
+                    const cfg = ALLOCATION_CONFIG[alloc.group];
+                    const diff = alloc.percentage - alloc.target;
+                    const groupContrib = contributionPlan?.groupContributions?.find(c => c.group === alloc.group);
+
+                    return (
+                        <div key={alloc.group} className="bg-white rounded-xl shadow-sm border overflow-hidden">
+                            <div className={`bg-gradient-to-r ${cfg?.gradient} p-4 text-white`}>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-2xl">{cfg?.emoji}</span>
+                                        <span className="font-semibold text-lg">{alloc.name}</span>
+                                    </div>
+                                    <span className="text-2xl font-bold">{alloc.target}%</span>
+                                </div>
+                                <p className="text-2xl font-bold mt-2">{formatCurrency(alloc.value)}</p>
+                            </div>
+                            <div className="p-4 space-y-3">
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-gray-500">Current</span>
+                                    <span className="font-semibold">{alloc.percentage.toFixed(1)}%</span>
+                                </div>
+                                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                    <div
+                                        className={`h-full rounded-full bg-gradient-to-r ${cfg?.gradient}`}
+                                        style={{ width: `${Math.min(100, (alloc.percentage / alloc.target) * 100)}%` }}
+                                    />
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-xs text-gray-500">vs Target</span>
+                                    <span className={`text-sm font-medium ${diff >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                        {diff >= 0 ? '+' : ''}{diff.toFixed(1)}%
+                                    </span>
+                                </div>
+                                {groupContrib && groupContrib.suggestedContribution > 0 && (
+                                    <div className="pt-2 border-t">
+                                        <p className="text-xs text-gray-500">This month's contribution</p>
+                                        <p className="font-semibold text-green-600">{formatCurrency(groupContrib.suggestedContribution)}</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* View Toggle */}
+            <div className="flex items-center gap-2">
+                <Layers className="w-5 h-5 text-gray-500" />
+                <span className="text-sm text-gray-600">View:</span>
+                <div className="flex bg-gray-100 rounded-lg p-1">
+                    <button
+                        onClick={() => setViewMode('allocation')}
+                        className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${viewMode === 'allocation' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600'
+                            }`}
+                    >
+                        50/40/10 Allocation
+                    </button>
+                    <button
+                        onClick={() => setViewMode('detailed')}
+                        className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${viewMode === 'detailed' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600'
+                            }`}
+                    >
+                        Detailed Holdings
+                    </button>
+                </div>
+            </div>
+
+            {/* Charts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {viewMode === 'allocation' ? (
+                    <>
+                        {/* 50/40/10 Pie Chart */}
+                        <div className="bg-white rounded-xl shadow-sm p-6 border">
+                            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                                <Wallet className="w-5 h-5 text-blue-500" />
+                                50/40/10 Allocation
+                            </h3>
+                            {allocationPieData.length > 0 ? (
+                                <ResponsiveContainer width="100%" height={280}>
+                                    <PieChart>
+                                        <Pie
+                                            data={allocationPieData}
+                                            dataKey="value"
+                                            nameKey="name"
+                                            cx="50%"
+                                            cy="50%"
+                                            outerRadius={100}
+                                            innerRadius={60}
+                                            label={({ name, percentage }) => `${name} ${percentage.toFixed(0)}%`}
+                                            labelLine={false}
+                                        >
+                                            {allocationPieData.map((entry, index) => (
+                                                <Cell key={index} fill={entry.color} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip formatter={(value) => formatCurrency(value)} />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <p className="text-gray-500 text-center py-12">No investment data yet</p>
+                            )}
+                        </div>
+
+                        {/* Current vs Target Bar */}
+                        <div className="bg-white rounded-xl shadow-sm p-6 border">
+                            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                                <Target className="w-5 h-5 text-purple-500" />
+                                Current vs Target
+                            </h3>
+                            <ResponsiveContainer width="100%" height={280}>
+                                <BarChart data={allocationComparisonData} layout="vertical">
+                                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                                    <XAxis type="number" domain={[0, 60]} tickFormatter={(v) => `${v}%`} />
+                                    <YAxis type="category" dataKey="name" width={90} />
+                                    <Tooltip formatter={(value) => `${value.toFixed(1)}%`} />
+                                    <Legend />
+                                    <Bar dataKey="current" name="Current" fill="#3B82F6" radius={[0, 4, 4, 0]} />
+                                    <Bar dataKey="target" name="Target" fill="#10B981" radius={[0, 4, 4, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        {/* Detailed Holdings Pie */}
+                        <div className="bg-white rounded-xl shadow-sm p-6 border">
+                            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                                <Wallet className="w-5 h-5 text-blue-500" />
+                                Holdings Breakdown
+                            </h3>
+                            {holdingsPieData.length > 0 ? (
+                                <ResponsiveContainer width="100%" height={280}>
+                                    <PieChart>
+                                        <Pie
+                                            data={holdingsPieData}
+                                            dataKey="value"
+                                            nameKey="name"
+                                            cx="50%"
+                                            cy="50%"
+                                            outerRadius={100}
+                                            innerRadius={50}
+                                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                            labelLine={false}
+                                        >
+                                            {holdingsPieData.map((entry, index) => (
+                                                <Cell key={index} fill={entry.color} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip formatter={(value) => formatCurrency(value)} />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <p className="text-gray-500 text-center py-12">No holdings yet</p>
+                            )}
+                        </div>
+
+                        {/* Holdings List */}
+                        <div className="bg-white rounded-xl shadow-sm p-6 border">
+                            <h3 className="text-lg font-semibold mb-4">Individual Holdings</h3>
+                            <div className="space-y-3">
+                                {summary.holdings.map(h => {
+                                    const cfg = HOLDING_CONFIG[h.type];
+                                    return (
+                                        <div key={h.type} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-xl">{cfg?.emoji}</span>
+                                                <div>
+                                                    <p className="font-medium">{cfg?.name || h.name}</p>
+                                                    <p className="text-xs text-gray-500">{h.platform}</p>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="font-semibold">{formatCurrency(h.current_value)}</p>
+                                                <p className="text-xs text-gray-500">{h.percentage.toFixed(1)}%</p>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </>
+                )}
             </div>
 
             {/* Phase Timeline */}
@@ -348,14 +565,12 @@ export default function InvestmentTracker({ formatCurrency }) {
                     {[1, 2, 3].map((phase, idx) => {
                         const isActive = currentPhase === phase;
                         const isPast = currentPhase > phase;
-                        const phaseInfo = summary.phases?.[phase];
 
                         return (
                             <div key={phase} className="flex items-center">
-                                <button
-                                    onClick={() => setExpandedPhase(expandedPhase === phase ? null : phase)}
-                                    className={`flex-shrink-0 px-4 py-3 rounded-xl border-2 transition-all ${isActive
-                                            ? 'border-blue-500 bg-blue-50 shadow-md'
+                                <div
+                                    className={`flex-shrink-0 px-4 py-3 rounded-xl border-2 ${isActive
+                                            ? 'border-blue-500 bg-blue-50'
                                             : isPast
                                                 ? 'border-green-300 bg-green-50'
                                                 : 'border-gray-200 bg-gray-50'
@@ -369,8 +584,8 @@ export default function InvestmentTracker({ formatCurrency }) {
                                         ) : (
                                             <div className="w-5 h-5 rounded-full bg-gray-300" />
                                         )}
-                                        <div className="text-left">
-                                            <p className={`font-medium ${isActive ? 'text-blue-700' : isPast ? 'text-green-700' : 'text-gray-600'}`}>
+                                        <div>
+                                            <p className={`font-medium text-sm ${isActive ? 'text-blue-700' : isPast ? 'text-green-700' : 'text-gray-600'}`}>
                                                 {PHASE_CONFIG[phase].label}
                                             </p>
                                             <p className="text-xs text-gray-500">
@@ -378,208 +593,53 @@ export default function InvestmentTracker({ formatCurrency }) {
                                             </p>
                                         </div>
                                     </div>
-                                </button>
+                                </div>
                                 {idx < 2 && <ArrowRight className="w-5 h-5 text-gray-300 mx-2 flex-shrink-0" />}
                             </div>
                         );
                     })}
                 </div>
-
-                {expandedPhase && summary.phases?.[expandedPhase] && (
-                    <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
-                        <h4 className="font-medium mb-2">{summary.phases[expandedPhase].name}</h4>
-                        <p className="text-sm text-gray-600 mb-3">{summary.phases[expandedPhase].description}</p>
-                        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                            {Object.entries(summary.phases[expandedPhase].allocation).map(([type, pct]) => (
-                                <div key={type} className="text-center p-2 bg-white rounded border">
-                                    <span className="text-lg">{ASSET_CONFIG[type]?.emoji}</span>
-                                    <p className="text-xs text-gray-500">{ASSET_CONFIG[type]?.shortName}</p>
-                                    <p className={`font-bold ${pct > 0 ? 'text-green-600' : 'text-gray-400'}`}>{pct}%</p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            {/* Current Month Contribution Plan */}
-            <div className="bg-white rounded-xl shadow-sm p-6 border">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-green-500" />
-                    This Month's Contribution Plan
-                </h3>
-
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                    {contributionPlan?.contributions?.map(contrib => {
-                        const assetConfig = ASSET_CONFIG[contrib.type];
-                        const isActive = contrib.contributionPercentage > 0;
-
-                        return (
-                            <div
-                                key={contrib.type}
-                                className={`rounded-xl p-4 border-2 transition-all ${isActive
-                                        ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-200'
-                                        : 'bg-gray-50 border-gray-100 opacity-60'
-                                    }`}
-                            >
-                                <div className="flex items-center gap-2 mb-2">
-                                    <span className="text-xl">{assetConfig?.emoji}</span>
-                                    <span className="text-sm font-medium text-gray-700">{assetConfig?.shortName}</span>
-                                </div>
-                                <p className={`text-xl font-bold ${isActive ? 'text-green-600' : 'text-gray-400'}`}>
-                                    {formatCurrency(contrib.suggestedContribution)}
-                                </p>
-                                <p className="text-xs text-gray-500 mt-1">
-                                    {contrib.contributionPercentage}% of budget
-                                </p>
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
-
-            {/* Holdings Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-                {summary.holdings.map(holding => {
-                    const assetConfig = ASSET_CONFIG[holding.type];
-                    const target = summary.targets[holding.type] || 0;
-                    const diff = holding.percentage - target;
-
-                    return (
-                        <div
-                            key={holding.type}
-                            className="bg-white rounded-xl shadow-sm border overflow-hidden"
-                        >
-                            <div className={`bg-gradient-to-r ${assetConfig?.gradient} p-3 text-white`}>
-                                <div className="flex items-center gap-2 mb-1">
-                                    <span className="text-xl">{assetConfig?.emoji}</span>
-                                    <span className="font-medium text-sm">{assetConfig?.shortName}</span>
-                                </div>
-                                <p className="text-xl font-bold">{formatCurrency(holding.current_value)}</p>
-                            </div>
-                            <div className="p-3 space-y-2">
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500">Current</span>
-                                    <span className="font-medium">{holding.percentage.toFixed(1)}%</span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500">Target</span>
-                                    <span className="text-gray-700">{target}%</span>
-                                </div>
-                                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                    <div
-                                        className={`h-full rounded-full bg-gradient-to-r ${assetConfig?.gradient}`}
-                                        style={{ width: `${Math.min(100, target > 0 ? (holding.percentage / target) * 100 : 0)}%` }}
-                                    />
-                                </div>
-                                <div className="text-center">
-                                    <span className={`text-xs font-medium ${diff >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                        {diff >= 0 ? '+' : ''}{diff.toFixed(1)}%
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-
-            {/* Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Current Allocation Pie */}
-                <div className="bg-white rounded-xl shadow-sm p-6 border">
-                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                        <Wallet className="w-5 h-5 text-blue-500" />
-                        Current Allocation
-                    </h3>
-                    {pieData.length > 0 ? (
-                        <ResponsiveContainer width="100%" height={250}>
-                            <PieChart>
-                                <Pie
-                                    data={pieData}
-                                    dataKey="value"
-                                    nameKey="name"
-                                    cx="50%"
-                                    cy="50%"
-                                    outerRadius={90}
-                                    innerRadius={50}
-                                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                    labelLine={false}
-                                >
-                                    {pieData.map((entry, index) => (
-                                        <Cell key={index} fill={entry.color} />
-                                    ))}
-                                </Pie>
-                                <Tooltip formatter={(value) => formatCurrency(value)} />
-                            </PieChart>
-                        </ResponsiveContainer>
-                    ) : (
-                        <p className="text-gray-500 text-center py-12">No investment data yet</p>
-                    )}
-                </div>
-
-                {/* Current vs Target */}
-                <div className="bg-white rounded-xl shadow-sm p-6 border">
-                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                        <Target className="w-5 h-5 text-purple-500" />
-                        Current vs Target (Final)
-                    </h3>
-                    <ResponsiveContainer width="100%" height={250}>
-                        <BarChart data={allocationComparisonData} layout="vertical">
-                            <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                            <XAxis type="number" domain={[0, 35]} tickFormatter={(v) => `${v}%`} />
-                            <YAxis type="category" dataKey="name" width={70} tick={{ fontSize: 12 }} />
-                            <Tooltip formatter={(value) => `${value.toFixed(1)}%`} />
-                            <Legend />
-                            <Bar dataKey="current" name="Current" fill="#3B82F6" radius={[0, 4, 4, 0]} />
-                            <Bar dataKey="target" name="Target" fill="#10B981" radius={[0, 4, 4, 0]} />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
             </div>
 
             {/* Contribution History */}
-            {showHistory && (
+            {showHistory && contributions.length > 0 && (
                 <div className="bg-white rounded-xl shadow-sm p-6 border">
                     <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                         <History className="w-5 h-5 text-gray-500" />
                         Recent Contributions
                     </h3>
-                    {contributions.length > 0 ? (
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead className="bg-gray-50 border-b">
-                                    <tr>
-                                        <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Date</th>
-                                        <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Asset</th>
-                                        <th className="text-right px-4 py-3 text-sm font-medium text-gray-500">Amount</th>
-                                        <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Notes</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y">
-                                    {contributions.slice(0, 10).map(c => {
-                                        const assetConfig = ASSET_CONFIG[c.type];
-                                        return (
-                                            <tr key={c.id} className="hover:bg-gray-50">
-                                                <td className="px-4 py-3 text-sm">{c.date}</td>
-                                                <td className="px-4 py-3">
-                                                    <span className="flex items-center gap-2">
-                                                        <span>{assetConfig?.emoji}</span>
-                                                        <span className="text-sm">{assetConfig?.shortName || c.type}</span>
-                                                    </span>
-                                                </td>
-                                                <td className="px-4 py-3 text-right font-medium text-green-600">
-                                                    +{formatCurrency(c.amount)}
-                                                </td>
-                                                <td className="px-4 py-3 text-sm text-gray-500">{c.notes || '-'}</td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-                    ) : (
-                        <p className="text-gray-500 text-center py-8">No contributions recorded yet</p>
-                    )}
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead className="bg-gray-50 border-b">
+                                <tr>
+                                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Date</th>
+                                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Asset</th>
+                                    <th className="text-right px-4 py-3 text-sm font-medium text-gray-500">Amount</th>
+                                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y">
+                                {contributions.slice(0, 10).map(c => {
+                                    const cfg = HOLDING_CONFIG[c.type];
+                                    return (
+                                        <tr key={c.id} className="hover:bg-gray-50">
+                                            <td className="px-4 py-3 text-sm">{c.date}</td>
+                                            <td className="px-4 py-3">
+                                                <span className="flex items-center gap-2">
+                                                    <span>{cfg?.emoji}</span>
+                                                    <span className="text-sm">{cfg?.shortName || c.type}</span>
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 text-right font-medium text-green-600">
+                                                +{formatCurrency(c.amount)}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm text-gray-500">{c.notes || '-'}</td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             )}
 
@@ -588,7 +648,7 @@ export default function InvestmentTracker({ formatCurrency }) {
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowSettings(false)}>
                     <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
                         <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-xl font-bold">Investment Settings</h3>
+                            <h3 className="text-xl font-bold">Settings</h3>
                             <button onClick={() => setShowSettings(false)} className="p-2 hover:bg-gray-100 rounded-lg">
                                 <X className="w-5 h-5" />
                             </button>
@@ -596,54 +656,36 @@ export default function InvestmentTracker({ formatCurrency }) {
 
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Monthly Investment Budget (IDR)
-                                </label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Monthly Budget (IDR)</label>
                                 <input
                                     type="number"
                                     value={config.monthly_budget}
                                     onChange={(e) => setConfig(prev => ({ ...prev, monthly_budget: parseFloat(e.target.value) }))}
                                     className="w-full border rounded-lg px-4 py-3 text-lg"
-                                    placeholder="5000000"
                                 />
                             </div>
-
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Plan Start Date
-                                </label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Plan Start Date</label>
                                 <input
                                     type="date"
                                     value={config.start_date || ''}
                                     onChange={(e) => setConfig(prev => ({ ...prev, start_date: e.target.value }))}
                                     className="w-full border rounded-lg px-4 py-3"
                                 />
-                                <p className="text-xs text-gray-500 mt-1">
-                                    This determines which phase you're in (Phase 1: months 1-2, Phase 2: months 3-8, Phase 3: month 9+)
-                                </p>
                             </div>
                         </div>
 
                         <div className="flex gap-3 mt-6">
-                            <button
-                                onClick={handleSaveConfig}
-                                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2"
-                            >
-                                <Check className="w-4 h-4" />
-                                Save Settings
+                            <button onClick={handleSaveConfig} className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2">
+                                <Check className="w-4 h-4" /> Save
                             </button>
-                            <button
-                                onClick={() => setShowSettings(false)}
-                                className="px-4 py-2 border rounded-lg hover:bg-gray-50"
-                            >
-                                Cancel
-                            </button>
+                            <button onClick={() => setShowSettings(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Log Contribution Modal */}
+            {/* Contribute Modal */}
             {showContributeForm && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowContributeForm(false)}>
                     <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6" onClick={e => e.stopPropagation()}>
@@ -659,16 +701,14 @@ export default function InvestmentTracker({ formatCurrency }) {
 
                         <form onSubmit={handleContribute} className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Asset Type</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Asset</label>
                                 <div className="grid grid-cols-5 gap-2">
-                                    {Object.entries(ASSET_CONFIG).map(([type, cfg]) => (
+                                    {Object.entries(HOLDING_CONFIG).map(([type, cfg]) => (
                                         <button
                                             key={type}
                                             type="button"
                                             onClick={() => setContributeForm(prev => ({ ...prev, type }))}
-                                            className={`p-2 rounded-xl border-2 transition-all ${contributeForm.type === type
-                                                    ? 'border-blue-500 bg-blue-50'
-                                                    : 'border-gray-200 hover:border-gray-300'
+                                            className={`p-2 rounded-xl border-2 transition-all ${contributeForm.type === type ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
                                                 }`}
                                         >
                                             <span className="text-xl block">{cfg.emoji}</span>
@@ -714,20 +754,10 @@ export default function InvestmentTracker({ formatCurrency }) {
                             </div>
 
                             <div className="flex gap-3 pt-2">
-                                <button
-                                    type="submit"
-                                    className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 flex items-center justify-center gap-2 font-medium"
-                                >
-                                    <Check className="w-4 h-4" />
-                                    Log Contribution
+                                <button type="submit" className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 flex items-center justify-center gap-2 font-medium">
+                                    <Check className="w-4 h-4" /> Log Contribution
                                 </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setShowContributeForm(false)}
-                                    className="px-4 py-3 border rounded-lg hover:bg-gray-50"
-                                >
-                                    Cancel
-                                </button>
+                                <button type="button" onClick={() => setShowContributeForm(false)} className="px-4 py-3 border rounded-lg hover:bg-gray-50">Cancel</button>
                             </div>
                         </form>
                     </div>
@@ -741,7 +771,7 @@ export default function InvestmentTracker({ formatCurrency }) {
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-xl font-bold flex items-center gap-2">
                                 <Edit2 className="w-6 h-6 text-blue-500" />
-                                Update Portfolio Values
+                                Update Values
                             </h3>
                             <button onClick={() => setShowEditHoldings(false)} className="p-2 hover:bg-gray-100 rounded-lg">
                                 <X className="w-5 h-5" />
@@ -749,43 +779,30 @@ export default function InvestmentTracker({ formatCurrency }) {
                         </div>
 
                         <div className="space-y-4">
-                            {summary.holdings.map(holding => {
-                                const assetConfig = ASSET_CONFIG[holding.type];
+                            {summary.holdings.map(h => {
+                                const cfg = HOLDING_CONFIG[h.type];
                                 return (
-                                    <div key={holding.type}>
+                                    <div key={h.type}>
                                         <label className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                                            <span>{assetConfig?.emoji}</span>
-                                            {assetConfig?.name}
+                                            <span>{cfg?.emoji}</span> {cfg?.name}
                                         </label>
                                         <input
                                             type="number"
-                                            value={holdingsForm[holding.type] || 0}
-                                            onChange={(e) => setHoldingsForm(prev => ({
-                                                ...prev,
-                                                [holding.type]: e.target.value
-                                            }))}
+                                            value={holdingsForm[h.type] || 0}
+                                            onChange={(e) => setHoldingsForm(prev => ({ ...prev, [h.type]: e.target.value }))}
                                             className="w-full border rounded-lg px-4 py-3 text-lg"
                                         />
-                                        <p className="text-xs text-gray-500 mt-1">{holding.platform}</p>
+                                        <p className="text-xs text-gray-500 mt-1">{h.platform}</p>
                                     </div>
                                 );
                             })}
                         </div>
 
                         <div className="flex gap-3 mt-6">
-                            <button
-                                onClick={handleUpdateHoldings}
-                                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2"
-                            >
-                                <Check className="w-4 h-4" />
-                                Update Values
+                            <button onClick={handleUpdateHoldings} className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2">
+                                <Check className="w-4 h-4" /> Update
                             </button>
-                            <button
-                                onClick={() => setShowEditHoldings(false)}
-                                className="px-4 py-2 border rounded-lg hover:bg-gray-50"
-                            >
-                                Cancel
-                            </button>
+                            <button onClick={() => setShowEditHoldings(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
                         </div>
                     </div>
                 </div>
