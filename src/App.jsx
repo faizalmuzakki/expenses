@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { PlusCircle, Trash2, Edit2, X, Check, TrendingUp, TrendingDown, Wallet, Calendar, Tag, LogOut, ArrowUpCircle, ArrowDownCircle, Image, Eye } from 'lucide-react';
+import { PlusCircle, Trash2, Edit2, X, Check, TrendingUp, TrendingDown, Wallet, Calendar, Tag, LogOut, ArrowUpCircle, ArrowDownCircle, Image, Eye, BarChart3 } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import Login from './Login';
+import InvestmentTracker from './InvestmentTracker';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -95,16 +96,17 @@ function App() {
 
       <nav className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex space-x-4">
-            {['dashboard', 'transactions', 'categories'].map(tab => (
+          <div className="flex space-x-4 overflow-x-auto">
+            {['dashboard', 'transactions', 'categories', 'investments'].map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-3 font-medium capitalize transition-colors ${activeTab === tab
+                className={`px-4 py-3 font-medium capitalize transition-colors whitespace-nowrap flex items-center gap-2 ${activeTab === tab
                   ? 'text-blue-600 border-b-2 border-blue-600'
                   : 'text-gray-500 hover:text-gray-700'
                   }`}
               >
+                {tab === 'investments' && <BarChart3 className="w-4 h-4" />}
                 {tab}
               </button>
             ))}
@@ -154,6 +156,9 @@ function App() {
                 categories={categories}
                 onRefresh={fetchData}
               />
+            )}
+            {activeTab === 'investments' && (
+              <InvestmentTracker formatCurrency={formatCurrency} />
             )}
           </>
         )}
