@@ -268,7 +268,7 @@ export default function InvestmentTracker({ formatCurrency }) {
                             <span className="text-gray-500">Robo Agresif</span>
                             <span className="text-xs text-purple-600">Auto-pilot</span>
                         </div>
-                        <p className="text-xs text-gray-500">70% stocks • 20% bonds • 10% cash</p>
+                        <p className="text-xs text-gray-500">90% stocks • 10% bonds</p>
                         <p className="text-xs text-gray-400 mt-1">Set and forget until age 55</p>
                     </div>
                 </div>
