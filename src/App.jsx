@@ -52,7 +52,7 @@ function App() {
     setLoading(true);
     try {
       const [expRes, catRes, statsRes] = await Promise.all([
-        fetch(`${API_URL}/api/expenses?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`),
+        fetch(`${API_URL}/api/expenses?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}&limit=1000`),
         fetch(`${API_URL}/api/categories`),
         fetch(`${API_URL}/api/stats/summary?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`)
       ]);
