@@ -83,7 +83,7 @@ function App() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">💰 Finance Tracker</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">💰 Finance Tracker</h1>
           <button
             onClick={handleLogout}
             className="flex items-center gap-2 text-gray-500 hover:text-red-600 transition-colors"
@@ -115,21 +115,21 @@ function App() {
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 py-6">
-        <div className="mb-6 flex gap-4 items-center">
-          <div className="flex items-center gap-2">
+        <div className="mb-6 flex flex-wrap gap-4 items-center">
+          <div className="flex flex-wrap items-center gap-2">
             <Calendar className="w-5 h-5 text-gray-500" />
             <input
               type="date"
               value={dateRange.startDate}
               onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
-              className="border rounded-lg px-3 py-2"
+              className="border rounded-lg px-3 py-2 text-sm"
             />
             <span className="text-gray-500">to</span>
             <input
               type="date"
               value={dateRange.endDate}
               onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
-              className="border rounded-lg px-3 py-2"
+              className="border rounded-lg px-3 py-2 text-sm"
             />
           </div>
         </div>
@@ -184,7 +184,7 @@ function Dashboard({ stats, formatCurrency }) {
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl shadow-sm p-6 border">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-green-100 rounded-lg">
@@ -192,7 +192,7 @@ function Dashboard({ stats, formatCurrency }) {
             </div>
             <div>
               <p className="text-sm text-gray-500">Income</p>
-              <p className="text-2xl font-bold text-green-600">{formatCurrency(stats.income || 0)}</p>
+              <p className="text-lg md:text-2xl font-bold text-green-600">{formatCurrency(stats.income || 0)}</p>
             </div>
           </div>
         </div>
@@ -203,7 +203,7 @@ function Dashboard({ stats, formatCurrency }) {
             </div>
             <div>
               <p className="text-sm text-gray-500">Expenses</p>
-              <p className="text-2xl font-bold text-red-600">{formatCurrency(stats.expenses || 0)}</p>
+              <p className="text-lg md:text-2xl font-bold text-red-600">{formatCurrency(stats.expenses || 0)}</p>
             </div>
           </div>
         </div>
@@ -214,7 +214,7 @@ function Dashboard({ stats, formatCurrency }) {
             </div>
             <div>
               <p className="text-sm text-gray-500">Net Balance</p>
-              <p className={`text-2xl font-bold ${(stats.net || 0) >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
+              <p className={`text-lg md:text-2xl font-bold ${(stats.net || 0) >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
                 {formatCurrency(stats.net || 0)}
               </p>
             </div>
@@ -227,7 +227,7 @@ function Dashboard({ stats, formatCurrency }) {
             </div>
             <div>
               <p className="text-sm text-gray-500">Transactions</p>
-              <p className="text-2xl font-bold">{stats.count || 0}</p>
+              <p className="text-lg md:text-2xl font-bold">{stats.count || 0}</p>
             </div>
           </div>
         </div>
@@ -345,7 +345,7 @@ function Dashboard({ stats, formatCurrency }) {
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={expenseData.slice(0, 5)} layout="vertical">
                 <XAxis type="number" tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                <YAxis type="category" dataKey="name" width={100} />
+                <YAxis type="category" dataKey="name" width={80} />
                 <Tooltip formatter={(value) => formatCurrency(value)} />
                 <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                   {expenseData.slice(0, 5).map((entry, index) => (
@@ -365,7 +365,7 @@ function Dashboard({ stats, formatCurrency }) {
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={incomeData.slice(0, 5)} layout="vertical">
                 <XAxis type="number" tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                <YAxis type="category" dataKey="name" width={100} />
+                <YAxis type="category" dataKey="name" width={80} />
                 <Tooltip formatter={(value) => formatCurrency(value)} />
                 <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                   {incomeData.slice(0, 5).map((entry, index) => (
@@ -483,7 +483,7 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
                     </div>
                   )}
                   <div>
-                    <p className={`text-3xl font-bold ${selectedTransaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                    <p className={`text-xl sm:text-3xl font-bold ${selectedTransaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
                       {selectedTransaction.type === 'income' ? '+' : '-'}{formatCurrency(selectedTransaction.amount)}
                     </p>
                     <p className="text-sm text-gray-500 capitalize">{selectedTransaction.type}</p>
@@ -518,7 +518,7 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
               )}
 
               {/* Details Grid */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-gray-50 rounded-xl p-4">
                   <p className="text-sm text-gray-500 mb-1">Date</p>
                   <p className="font-medium flex items-center gap-2">
@@ -598,10 +598,10 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
         </div>
       )}
       <div className="flex justify-between items-center flex-wrap gap-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <h2 className="text-xl font-semibold">Transactions</h2>
           {/* Type Filter */}
-          <div className="flex bg-gray-100 rounded-lg p-1 ml-4">
+          <div className="flex bg-gray-100 rounded-lg p-1">
             {['all', 'expense', 'income'].map(type => (
               <button
                 key={type}
@@ -620,149 +620,167 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
             ))}
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => { setShowForm(true); setEditingId(null); setForm(prev => ({ ...prev, type: 'income' })); }}
-            className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+            className="flex items-center gap-2 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm"
           >
-            <ArrowUpCircle className="w-5 h-5" />
-            Add Income
+            <ArrowUpCircle className="w-4 h-4" />
+            <span className="hidden sm:inline">Add</span> Income
           </button>
           <button
             onClick={() => { setShowForm(true); setEditingId(null); setForm(prev => ({ ...prev, type: 'expense' })); }}
-            className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+            className="flex items-center gap-2 bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm"
           >
-            <ArrowDownCircle className="w-5 h-5" />
-            Add Expense
+            <ArrowDownCircle className="w-4 h-4" />
+            <span className="hidden sm:inline">Add</span> Expense
           </button>
         </div>
       </div>
 
       {showForm && (
-        <div className={`rounded-xl shadow-sm p-6 border-2 ${form.type === 'income' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-          <div className="flex items-center gap-2 mb-4">
-            {form.type === 'income' ? (
-              <ArrowUpCircle className="w-6 h-6 text-green-600" />
-            ) : (
-              <ArrowDownCircle className="w-6 h-6 text-red-600" />
-            )}
-            <h3 className="text-lg font-semibold">
-              {editingId ? 'Edit' : 'Add'} {form.type === 'income' ? 'Income' : 'Expense'}
-            </h3>
-          </div>
-
-          {/* Type Toggle */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
-            <div className="flex bg-white rounded-lg p-1 w-fit border">
-              <button
-                type="button"
-                onClick={() => handleTypeChange('expense')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${form.type === 'expense'
-                  ? 'bg-red-500 text-white'
-                  : 'text-gray-600 hover:text-gray-900'
-                  }`}
-              >
-                Expense
-              </button>
-              <button
-                type="button"
-                onClick={() => handleTypeChange('income')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${form.type === 'income'
-                  ? 'bg-green-500 text-white'
-                  : 'text-gray-600 hover:text-gray-900'
-                  }`}
-              >
-                Income
-              </button>
-            </div>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Amount *</label>
-                <input
-                  type="number"
-                  required
-                  value={form.amount}
-                  onChange={(e) => setForm(prev => ({ ...prev, amount: e.target.value }))}
-                  className="w-full border rounded-lg px-3 py-2 bg-white"
-                  placeholder="50000"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
-                <input
-                  type="date"
-                  required
-                  value={form.date}
-                  onChange={(e) => setForm(prev => ({ ...prev, date: e.target.value }))}
-                  className="w-full border rounded-lg px-3 py-2 bg-white"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <input
-                  type="text"
-                  value={form.description}
-                  onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
-                  className="w-full border rounded-lg px-3 py-2 bg-white"
-                  placeholder={form.type === 'income' ? 'Salary payment' : 'Lunch'}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {form.type === 'income' ? 'Source' : 'Vendor'}
-                </label>
-                <input
-                  type="text"
-                  value={form.vendor}
-                  onChange={(e) => setForm(prev => ({ ...prev, vendor: e.target.value }))}
-                  className="w-full border rounded-lg px-3 py-2 bg-white"
-                  placeholder={form.type === 'income' ? 'Company name' : 'Restaurant name'}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                <select
-                  value={form.category_id}
-                  onChange={(e) => setForm(prev => ({ ...prev, category_id: e.target.value }))}
-                  className="w-full border rounded-lg px-3 py-2 bg-white"
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => { setShowForm(false); setEditingId(null); }}>
+          <div
+            className="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className={`p-6 border-b ${form.type === 'income' ? 'bg-green-50' : 'bg-red-50'}`}>
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  {form.type === 'income' ? (
+                    <ArrowUpCircle className="w-6 h-6 text-green-600" />
+                  ) : (
+                    <ArrowDownCircle className="w-6 h-6 text-red-600" />
+                  )}
+                  <h3 className="text-lg font-semibold">
+                    {editingId ? 'Edit' : 'Add'} {form.type === 'income' ? 'Income' : 'Expense'}
+                  </h3>
+                </div>
+                <button
+                  onClick={() => { setShowForm(false); setEditingId(null); }}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 >
-                  <option value="">Select category</option>
-                  {filteredCategories.map(cat => (
-                    <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
-                  ))}
-                </select>
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
               </div>
             </div>
-            <div className="flex gap-2">
-              <button
-                type="submit"
-                className={`flex items-center gap-2 text-white px-4 py-2 rounded-lg transition-colors ${form.type === 'income'
-                  ? 'bg-green-600 hover:bg-green-700'
-                  : 'bg-red-600 hover:bg-red-700'
-                  }`}
-              >
-                <Check className="w-5 h-5" />
-                {editingId ? 'Update' : 'Save'}
-              </button>
-              <button
-                type="button"
-                onClick={() => { setShowForm(false); setEditingId(null); }}
-                className="flex items-center gap-2 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300"
-              >
-                <X className="w-5 h-5" />
-                Cancel
-              </button>
+
+            {/* Modal Body */}
+            <div className="p-6">
+              {/* Type Toggle */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                <div className="flex bg-gray-100 rounded-lg p-1 w-fit">
+                  <button
+                    type="button"
+                    onClick={() => handleTypeChange('expense')}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${form.type === 'expense'
+                      ? 'bg-red-500 text-white'
+                      : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                  >
+                    Expense
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleTypeChange('income')}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${form.type === 'income'
+                      ? 'bg-green-500 text-white'
+                      : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                  >
+                    Income
+                  </button>
+                </div>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Amount *</label>
+                    <input
+                      type="number"
+                      required
+                      value={form.amount}
+                      onChange={(e) => setForm(prev => ({ ...prev, amount: e.target.value }))}
+                      className="w-full border rounded-lg px-3 py-2"
+                      placeholder="50000"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
+                    <input
+                      type="date"
+                      required
+                      value={form.date}
+                      onChange={(e) => setForm(prev => ({ ...prev, date: e.target.value }))}
+                      className="w-full border rounded-lg px-3 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <input
+                      type="text"
+                      value={form.description}
+                      onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
+                      className="w-full border rounded-lg px-3 py-2"
+                      placeholder={form.type === 'income' ? 'Salary payment' : 'Lunch'}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {form.type === 'income' ? 'Source' : 'Vendor'}
+                    </label>
+                    <input
+                      type="text"
+                      value={form.vendor}
+                      onChange={(e) => setForm(prev => ({ ...prev, vendor: e.target.value }))}
+                      className="w-full border rounded-lg px-3 py-2"
+                      placeholder={form.type === 'income' ? 'Company name' : 'Restaurant name'}
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <select
+                      value={form.category_id}
+                      onChange={(e) => setForm(prev => ({ ...prev, category_id: e.target.value }))}
+                      className="w-full border rounded-lg px-3 py-2"
+                    >
+                      <option value="">Select category</option>
+                      {filteredCategories.map(cat => (
+                        <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="submit"
+                    className={`flex-1 flex items-center justify-center gap-2 text-white px-4 py-2 rounded-lg transition-colors ${form.type === 'income'
+                      ? 'bg-green-600 hover:bg-green-700'
+                      : 'bg-red-600 hover:bg-red-700'
+                      }`}
+                  >
+                    <Check className="w-5 h-5" />
+                    {editingId ? 'Update' : 'Save'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowForm(false); setEditingId(null); }}
+                    className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
             </div>
-          </form>
+          </div>
         </div>
       )}
 
-      <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-        <table className="w-full">
+      <div className="bg-white rounded-xl shadow-sm border overflow-hidden overflow-x-auto">
+        <table className="w-full min-w-[640px]">
           <thead className="bg-gray-50 border-b">
             <tr>
               <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Date</th>
@@ -944,10 +962,10 @@ function CategoryList({ categories, onRefresh }) {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center flex-wrap gap-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <h2 className="text-xl font-semibold">Categories</h2>
           {/* Type Filter */}
-          <div className="flex bg-gray-100 rounded-lg p-1 ml-4">
+          <div className="flex bg-gray-100 rounded-lg p-1">
             {['all', 'expense', 'income'].map(type => (
               <button
                 key={type}
@@ -966,20 +984,20 @@ function CategoryList({ categories, onRefresh }) {
             ))}
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => { setShowForm(true); setEditingId(null); setForm(prev => ({ ...prev, type: 'income', color: '#10B981' })); }}
-            className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+            className="flex items-center gap-2 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm"
           >
-            <PlusCircle className="w-5 h-5" />
-            Add Income Category
+            <PlusCircle className="w-4 h-4" />
+            <span className="hidden sm:inline">Add</span> Income <span className="hidden sm:inline">Category</span>
           </button>
           <button
             onClick={() => { setShowForm(true); setEditingId(null); setForm(prev => ({ ...prev, type: 'expense', color: '#EF4444' })); }}
-            className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+            className="flex items-center gap-2 bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm"
           >
-            <PlusCircle className="w-5 h-5" />
-            Add Expense Category
+            <PlusCircle className="w-4 h-4" />
+            <span className="hidden sm:inline">Add</span> Expense <span className="hidden sm:inline">Category</span>
           </button>
         </div>
       </div>
