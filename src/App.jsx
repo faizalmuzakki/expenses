@@ -345,7 +345,7 @@ function Dashboard({ stats, formatCurrency }) {
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={expenseData.slice(0, 5)} layout="vertical">
                 <XAxis type="number" tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                <YAxis type="category" dataKey="name" width={100} />
+                <YAxis type="category" dataKey="name" width={80} />
                 <Tooltip formatter={(value) => formatCurrency(value)} />
                 <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                   {expenseData.slice(0, 5).map((entry, index) => (
@@ -365,7 +365,7 @@ function Dashboard({ stats, formatCurrency }) {
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={incomeData.slice(0, 5)} layout="vertical">
                 <XAxis type="number" tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                <YAxis type="category" dataKey="name" width={100} />
+                <YAxis type="category" dataKey="name" width={80} />
                 <Tooltip formatter={(value) => formatCurrency(value)} />
                 <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                   {incomeData.slice(0, 5).map((entry, index) => (
@@ -598,10 +598,10 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
         </div>
       )}
       <div className="flex justify-between items-center flex-wrap gap-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <h2 className="text-xl font-semibold">Transactions</h2>
           {/* Type Filter */}
-          <div className="flex bg-gray-100 rounded-lg p-1 ml-4">
+          <div className="flex bg-gray-100 rounded-lg p-1">
             {['all', 'expense', 'income'].map(type => (
               <button
                 key={type}
@@ -620,20 +620,20 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
             ))}
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => { setShowForm(true); setEditingId(null); setForm(prev => ({ ...prev, type: 'income' })); }}
-            className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+            className="flex items-center gap-2 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm"
           >
-            <ArrowUpCircle className="w-5 h-5" />
-            Add Income
+            <ArrowUpCircle className="w-4 h-4" />
+            <span className="hidden sm:inline">Add</span> Income
           </button>
           <button
             onClick={() => { setShowForm(true); setEditingId(null); setForm(prev => ({ ...prev, type: 'expense' })); }}
-            className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+            className="flex items-center gap-2 bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm"
           >
-            <ArrowDownCircle className="w-5 h-5" />
-            Add Expense
+            <ArrowDownCircle className="w-4 h-4" />
+            <span className="hidden sm:inline">Add</span> Expense
           </button>
         </div>
       </div>
@@ -944,10 +944,10 @@ function CategoryList({ categories, onRefresh }) {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center flex-wrap gap-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <h2 className="text-xl font-semibold">Categories</h2>
           {/* Type Filter */}
-          <div className="flex bg-gray-100 rounded-lg p-1 ml-4">
+          <div className="flex bg-gray-100 rounded-lg p-1">
             {['all', 'expense', 'income'].map(type => (
               <button
                 key={type}
@@ -966,20 +966,20 @@ function CategoryList({ categories, onRefresh }) {
             ))}
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => { setShowForm(true); setEditingId(null); setForm(prev => ({ ...prev, type: 'income', color: '#10B981' })); }}
-            className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+            className="flex items-center gap-2 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm"
           >
-            <PlusCircle className="w-5 h-5" />
-            Add Income Category
+            <PlusCircle className="w-4 h-4" />
+            <span className="hidden sm:inline">Add</span> Income <span className="hidden sm:inline">Category</span>
           </button>
           <button
             onClick={() => { setShowForm(true); setEditingId(null); setForm(prev => ({ ...prev, type: 'expense', color: '#EF4444' })); }}
-            className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+            className="flex items-center gap-2 bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm"
           >
-            <PlusCircle className="w-5 h-5" />
-            Add Expense Category
+            <PlusCircle className="w-4 h-4" />
+            <span className="hidden sm:inline">Add</span> Expense <span className="hidden sm:inline">Category</span>
           </button>
         </div>
       </div>

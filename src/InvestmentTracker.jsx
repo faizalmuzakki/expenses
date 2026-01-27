@@ -154,20 +154,20 @@ export default function InvestmentTracker({ formatCurrency }) {
             {/* Header */}
             <div className="flex flex-wrap justify-between items-center gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-900">📊 Investment Portfolio</h2>
-                    <p className="text-gray-500 mt-1">3 Buckets: Safety • Pension • Active (50/40/10)</p>
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900">📊 Investment Portfolio</h2>
+                    <p className="text-gray-500 mt-1 text-sm sm:text-base">3 Buckets: Safety • Pension • Active (50/40/10)</p>
                 </div>
                 <div className="flex gap-2 flex-wrap">
-                    <button onClick={() => setShowHistory(!showHistory)} className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-gray-50">
-                        <History className="w-4 h-4" /> History
+                    <button onClick={() => setShowHistory(!showHistory)} className="flex items-center gap-2 px-3 py-2 border rounded-lg hover:bg-gray-50 text-sm">
+                        <History className="w-4 h-4" /> <span className="hidden sm:inline">History</span>
                     </button>
-                    <button onClick={() => setShowEditHoldings(true)} className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-gray-50">
-                        <Edit2 className="w-4 h-4" /> Update
+                    <button onClick={() => setShowEditHoldings(true)} className="flex items-center gap-2 px-3 py-2 border rounded-lg hover:bg-gray-50 text-sm">
+                        <Edit2 className="w-4 h-4" /> <span className="hidden sm:inline">Update</span>
                     </button>
-                    <button onClick={() => setShowSettings(true)} className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-gray-50">
-                        <Settings className="w-4 h-4" /> Settings
+                    <button onClick={() => setShowSettings(true)} className="flex items-center gap-2 px-3 py-2 border rounded-lg hover:bg-gray-50 text-sm">
+                        <Settings className="w-4 h-4" /> <span className="hidden sm:inline">Settings</span>
                     </button>
-                    <button onClick={() => setShowContributeForm(true)} className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-lg hover:from-green-600 hover:to-emerald-700 shadow-lg">
+                    <button onClick={() => setShowContributeForm(true)} className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-2 rounded-lg hover:from-green-600 hover:to-emerald-700 shadow-lg text-sm">
                         <PlusCircle className="w-4 h-4" /> Contribute
                     </button>
                 </div>
@@ -220,7 +220,7 @@ export default function InvestmentTracker({ formatCurrency }) {
                             />
                         ))}
                     </div>
-                    <div className="flex justify-between mt-2 text-xs text-slate-400">
+                    <div className="flex flex-wrap justify-between mt-2 text-xs text-slate-400 gap-1">
                         {(summary.portfolioBreakdown || []).map(b => (
                             <span key={b.key}>{b.emoji} {b.name} ({b.percentage.toFixed(0)}%)</span>
                         ))}
@@ -487,7 +487,7 @@ export default function InvestmentTracker({ formatCurrency }) {
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Amount (IDR)</label>
                                 <input type="number" required value={contributeForm.amount} onChange={(e) => setContributeForm(prev => ({ ...prev, amount: e.target.value }))} className="w-full border rounded-lg px-4 py-3 text-lg" placeholder="5000000" />
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
                                     <input type="date" required value={contributeForm.date} onChange={(e) => setContributeForm(prev => ({ ...prev, date: e.target.value }))} className="w-full border rounded-lg px-4 py-3" />
