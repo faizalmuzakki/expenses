@@ -200,7 +200,7 @@ export default function InvestmentTracker({ formatCurrency }) {
                 <div className="flex flex-wrap justify-between items-start gap-4">
                     <div>
                         <p className="text-slate-400 text-sm mb-1">Total Portfolio</p>
-                        <p className="text-4xl font-bold">{formatCurrency(summary.totalPortfolio)}</p>
+                        <p className="text-2xl sm:text-4xl font-bold">{formatCurrency(summary.totalPortfolio)}</p>
                     </div>
                     <div className="text-right">
                         <p className="text-slate-400 text-sm mb-1">Monthly Budget</p>
@@ -237,7 +237,7 @@ export default function InvestmentTracker({ formatCurrency }) {
                             <Shield className="w-5 h-5" />
                             <span className="font-semibold">Safety Bucket</span>
                         </div>
-                        <p className="text-2xl font-bold">{formatCurrency(summary.buckets?.safety?.total || 0)}</p>
+                        <p className="text-xl sm:text-2xl font-bold">{formatCurrency(summary.buckets?.safety?.total || 0)}</p>
                     </div>
                     <div className="p-4">
                         <div className="flex justify-between text-sm mb-2">
@@ -261,7 +261,7 @@ export default function InvestmentTracker({ formatCurrency }) {
                             <Building2 className="w-5 h-5" />
                             <span className="font-semibold">Pension Bucket</span>
                         </div>
-                        <p className="text-2xl font-bold">{formatCurrency(summary.buckets?.pension?.total || 0)}</p>
+                        <p className="text-xl sm:text-2xl font-bold">{formatCurrency(summary.buckets?.pension?.total || 0)}</p>
                     </div>
                     <div className="p-4">
                         <div className="flex justify-between text-sm mb-2">
@@ -280,7 +280,7 @@ export default function InvestmentTracker({ formatCurrency }) {
                             <Briefcase className="w-5 h-5" />
                             <span className="font-semibold">Active Portfolio</span>
                         </div>
-                        <p className="text-2xl font-bold">{formatCurrency(summary.activePortfolioTotal || 0)}</p>
+                        <p className="text-xl sm:text-2xl font-bold">{formatCurrency(summary.activePortfolioTotal || 0)}</p>
                     </div>
                     <div className="p-4">
                         <div className="text-xs font-medium text-gray-600 mb-2">50/40/10 Strategy</div>
@@ -351,7 +351,7 @@ export default function InvestmentTracker({ formatCurrency }) {
                 </div>
 
                 {/* Holdings breakdown */}
-                <div className="grid grid-cols-3 gap-4 mt-6">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
                     {(summary.activeAllocation || []).map(a => {
                         const cfg = HOLDING_CONFIG[a.type];
                         const diff = a.currentPercentage - a.targetPercentage;
@@ -388,7 +388,7 @@ export default function InvestmentTracker({ formatCurrency }) {
                         </p>
                     )}
 
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
                         {(contributionPlan.contributions || []).map(c => {
                             const cfg = HOLDING_CONFIG[c.type];
                             return (
@@ -473,7 +473,7 @@ export default function InvestmentTracker({ formatCurrency }) {
                         <form onSubmit={handleContribute} className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Asset</label>
-                                <div className="grid grid-cols-5 gap-2">
+                                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                                     {Object.entries(HOLDING_CONFIG).map(([type, cfg]) => (
                                         <button key={type} type="button" onClick={() => setContributeForm(prev => ({ ...prev, type }))}
                                             className={`p-2 rounded-xl border-2 transition-all ${contributeForm.type === type ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}>

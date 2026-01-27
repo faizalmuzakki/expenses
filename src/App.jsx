@@ -83,7 +83,7 @@ function App() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">💰 Finance Tracker</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">💰 Finance Tracker</h1>
           <button
             onClick={handleLogout}
             className="flex items-center gap-2 text-gray-500 hover:text-red-600 transition-colors"
@@ -115,21 +115,21 @@ function App() {
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 py-6">
-        <div className="mb-6 flex gap-4 items-center">
-          <div className="flex items-center gap-2">
+        <div className="mb-6 flex flex-wrap gap-4 items-center">
+          <div className="flex flex-wrap items-center gap-2">
             <Calendar className="w-5 h-5 text-gray-500" />
             <input
               type="date"
               value={dateRange.startDate}
               onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
-              className="border rounded-lg px-3 py-2"
+              className="border rounded-lg px-3 py-2 text-sm"
             />
             <span className="text-gray-500">to</span>
             <input
               type="date"
               value={dateRange.endDate}
               onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
-              className="border rounded-lg px-3 py-2"
+              className="border rounded-lg px-3 py-2 text-sm"
             />
           </div>
         </div>
@@ -184,7 +184,7 @@ function Dashboard({ stats, formatCurrency }) {
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl shadow-sm p-6 border">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-green-100 rounded-lg">
@@ -192,7 +192,7 @@ function Dashboard({ stats, formatCurrency }) {
             </div>
             <div>
               <p className="text-sm text-gray-500">Income</p>
-              <p className="text-2xl font-bold text-green-600">{formatCurrency(stats.income || 0)}</p>
+              <p className="text-lg md:text-2xl font-bold text-green-600">{formatCurrency(stats.income || 0)}</p>
             </div>
           </div>
         </div>
@@ -203,7 +203,7 @@ function Dashboard({ stats, formatCurrency }) {
             </div>
             <div>
               <p className="text-sm text-gray-500">Expenses</p>
-              <p className="text-2xl font-bold text-red-600">{formatCurrency(stats.expenses || 0)}</p>
+              <p className="text-lg md:text-2xl font-bold text-red-600">{formatCurrency(stats.expenses || 0)}</p>
             </div>
           </div>
         </div>
@@ -214,7 +214,7 @@ function Dashboard({ stats, formatCurrency }) {
             </div>
             <div>
               <p className="text-sm text-gray-500">Net Balance</p>
-              <p className={`text-2xl font-bold ${(stats.net || 0) >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
+              <p className={`text-lg md:text-2xl font-bold ${(stats.net || 0) >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
                 {formatCurrency(stats.net || 0)}
               </p>
             </div>
@@ -227,7 +227,7 @@ function Dashboard({ stats, formatCurrency }) {
             </div>
             <div>
               <p className="text-sm text-gray-500">Transactions</p>
-              <p className="text-2xl font-bold">{stats.count || 0}</p>
+              <p className="text-lg md:text-2xl font-bold">{stats.count || 0}</p>
             </div>
           </div>
         </div>
@@ -483,7 +483,7 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
                     </div>
                   )}
                   <div>
-                    <p className={`text-3xl font-bold ${selectedTransaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                    <p className={`text-xl sm:text-3xl font-bold ${selectedTransaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
                       {selectedTransaction.type === 'income' ? '+' : '-'}{formatCurrency(selectedTransaction.amount)}
                     </p>
                     <p className="text-sm text-gray-500 capitalize">{selectedTransaction.type}</p>
@@ -518,7 +518,7 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
               )}
 
               {/* Details Grid */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-gray-50 rounded-xl p-4">
                   <p className="text-sm text-gray-500 mb-1">Date</p>
                   <p className="font-medium flex items-center gap-2">
@@ -761,8 +761,8 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
         </div>
       )}
 
-      <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-        <table className="w-full">
+      <div className="bg-white rounded-xl shadow-sm border overflow-hidden overflow-x-auto">
+        <table className="w-full min-w-[640px]">
           <thead className="bg-gray-50 border-b">
             <tr>
               <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Date</th>
