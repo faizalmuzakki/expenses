@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { PlusCircle, Trash2, Edit2, X, Check, TrendingUp, TrendingDown, Wallet, Calendar, Tag, LogOut, ArrowUpCircle, ArrowDownCircle, Image, Eye, BarChart3 } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import Login from './Login';
@@ -388,7 +388,6 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
   const [editingId, setEditingId] = useState(null);
   const [typeFilter, setTypeFilter] = useState('all');
   const [selectedTransaction, setSelectedTransaction] = useState(null);
-  const formRef = useRef(null);
   const [form, setForm] = useState({
     amount: '',
     description: '',
@@ -399,12 +398,6 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
   });
 
   const API_URL = import.meta.env.VITE_API_URL || '';
-
-  useEffect(() => {
-    if (showForm && formRef.current) {
-      formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }, [showForm]);
 
   // Filter categories based on selected transaction type
   const filteredCategories = categories.filter(cat => cat.type === form.type);
@@ -646,125 +639,143 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
       </div>
 
       {showForm && (
-        <div ref={formRef} className={`rounded-xl shadow-sm p-6 border-2 ${form.type === 'income' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-          <div className="flex items-center gap-2 mb-4">
-            {form.type === 'income' ? (
-              <ArrowUpCircle className="w-6 h-6 text-green-600" />
-            ) : (
-              <ArrowDownCircle className="w-6 h-6 text-red-600" />
-            )}
-            <h3 className="text-lg font-semibold">
-              {editingId ? 'Edit' : 'Add'} {form.type === 'income' ? 'Income' : 'Expense'}
-            </h3>
-          </div>
-
-          {/* Type Toggle */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
-            <div className="flex bg-white rounded-lg p-1 w-fit border">
-              <button
-                type="button"
-                onClick={() => handleTypeChange('expense')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${form.type === 'expense'
-                  ? 'bg-red-500 text-white'
-                  : 'text-gray-600 hover:text-gray-900'
-                  }`}
-              >
-                Expense
-              </button>
-              <button
-                type="button"
-                onClick={() => handleTypeChange('income')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${form.type === 'income'
-                  ? 'bg-green-500 text-white'
-                  : 'text-gray-600 hover:text-gray-900'
-                  }`}
-              >
-                Income
-              </button>
-            </div>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Amount *</label>
-                <input
-                  type="number"
-                  required
-                  value={form.amount}
-                  onChange={(e) => setForm(prev => ({ ...prev, amount: e.target.value }))}
-                  className="w-full border rounded-lg px-3 py-2 bg-white"
-                  placeholder="50000"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
-                <input
-                  type="date"
-                  required
-                  value={form.date}
-                  onChange={(e) => setForm(prev => ({ ...prev, date: e.target.value }))}
-                  className="w-full border rounded-lg px-3 py-2 bg-white"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <input
-                  type="text"
-                  value={form.description}
-                  onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
-                  className="w-full border rounded-lg px-3 py-2 bg-white"
-                  placeholder={form.type === 'income' ? 'Salary payment' : 'Lunch'}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {form.type === 'income' ? 'Source' : 'Vendor'}
-                </label>
-                <input
-                  type="text"
-                  value={form.vendor}
-                  onChange={(e) => setForm(prev => ({ ...prev, vendor: e.target.value }))}
-                  className="w-full border rounded-lg px-3 py-2 bg-white"
-                  placeholder={form.type === 'income' ? 'Company name' : 'Restaurant name'}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                <select
-                  value={form.category_id}
-                  onChange={(e) => setForm(prev => ({ ...prev, category_id: e.target.value }))}
-                  className="w-full border rounded-lg px-3 py-2 bg-white"
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => { setShowForm(false); setEditingId(null); }}>
+          <div
+            className="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className={`p-6 border-b ${form.type === 'income' ? 'bg-green-50' : 'bg-red-50'}`}>
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  {form.type === 'income' ? (
+                    <ArrowUpCircle className="w-6 h-6 text-green-600" />
+                  ) : (
+                    <ArrowDownCircle className="w-6 h-6 text-red-600" />
+                  )}
+                  <h3 className="text-lg font-semibold">
+                    {editingId ? 'Edit' : 'Add'} {form.type === 'income' ? 'Income' : 'Expense'}
+                  </h3>
+                </div>
+                <button
+                  onClick={() => { setShowForm(false); setEditingId(null); }}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 >
-                  <option value="">Select category</option>
-                  {filteredCategories.map(cat => (
-                    <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
-                  ))}
-                </select>
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
               </div>
             </div>
-            <div className="flex gap-2">
-              <button
-                type="submit"
-                className={`flex items-center gap-2 text-white px-4 py-2 rounded-lg transition-colors ${form.type === 'income'
-                  ? 'bg-green-600 hover:bg-green-700'
-                  : 'bg-red-600 hover:bg-red-700'
-                  }`}
-              >
-                <Check className="w-5 h-5" />
-                {editingId ? 'Update' : 'Save'}
-              </button>
-              <button
-                type="button"
-                onClick={() => { setShowForm(false); setEditingId(null); }}
-                className="flex items-center gap-2 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300"
-              >
-                <X className="w-5 h-5" />
-                Cancel
-              </button>
+
+            {/* Modal Body */}
+            <div className="p-6">
+              {/* Type Toggle */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                <div className="flex bg-gray-100 rounded-lg p-1 w-fit">
+                  <button
+                    type="button"
+                    onClick={() => handleTypeChange('expense')}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${form.type === 'expense'
+                      ? 'bg-red-500 text-white'
+                      : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                  >
+                    Expense
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleTypeChange('income')}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${form.type === 'income'
+                      ? 'bg-green-500 text-white'
+                      : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                  >
+                    Income
+                  </button>
+                </div>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Amount *</label>
+                    <input
+                      type="number"
+                      required
+                      value={form.amount}
+                      onChange={(e) => setForm(prev => ({ ...prev, amount: e.target.value }))}
+                      className="w-full border rounded-lg px-3 py-2"
+                      placeholder="50000"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
+                    <input
+                      type="date"
+                      required
+                      value={form.date}
+                      onChange={(e) => setForm(prev => ({ ...prev, date: e.target.value }))}
+                      className="w-full border rounded-lg px-3 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <input
+                      type="text"
+                      value={form.description}
+                      onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
+                      className="w-full border rounded-lg px-3 py-2"
+                      placeholder={form.type === 'income' ? 'Salary payment' : 'Lunch'}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {form.type === 'income' ? 'Source' : 'Vendor'}
+                    </label>
+                    <input
+                      type="text"
+                      value={form.vendor}
+                      onChange={(e) => setForm(prev => ({ ...prev, vendor: e.target.value }))}
+                      className="w-full border rounded-lg px-3 py-2"
+                      placeholder={form.type === 'income' ? 'Company name' : 'Restaurant name'}
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <select
+                      value={form.category_id}
+                      onChange={(e) => setForm(prev => ({ ...prev, category_id: e.target.value }))}
+                      className="w-full border rounded-lg px-3 py-2"
+                    >
+                      <option value="">Select category</option>
+                      {filteredCategories.map(cat => (
+                        <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="submit"
+                    className={`flex-1 flex items-center justify-center gap-2 text-white px-4 py-2 rounded-lg transition-colors ${form.type === 'income'
+                      ? 'bg-green-600 hover:bg-green-700'
+                      : 'bg-red-600 hover:bg-red-700'
+                      }`}
+                  >
+                    <Check className="w-5 h-5" />
+                    {editingId ? 'Update' : 'Save'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowForm(false); setEditingId(null); }}
+                    className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
             </div>
-          </form>
+          </div>
         </div>
       )}
 
