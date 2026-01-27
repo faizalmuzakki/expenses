@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { PlusCircle, Trash2, Edit2, X, Check, TrendingUp, TrendingDown, Wallet, Calendar, Tag, LogOut, ArrowUpCircle, ArrowDownCircle, Image, Eye, BarChart3 } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import Login from './Login';
@@ -388,6 +388,7 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
   const [editingId, setEditingId] = useState(null);
   const [typeFilter, setTypeFilter] = useState('all');
   const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const formRef = useRef(null);
   const [form, setForm] = useState({
     amount: '',
     description: '',
@@ -398,6 +399,12 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
   });
 
   const API_URL = import.meta.env.VITE_API_URL || '';
+
+  useEffect(() => {
+    if (showForm && formRef.current) {
+      formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [showForm]);
 
   // Filter categories based on selected transaction type
   const filteredCategories = categories.filter(cat => cat.type === form.type);
@@ -639,7 +646,7 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
       </div>
 
       {showForm && (
-        <div className={`rounded-xl shadow-sm p-6 border-2 ${form.type === 'income' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+        <div ref={formRef} className={`rounded-xl shadow-sm p-6 border-2 ${form.type === 'income' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
           <div className="flex items-center gap-2 mb-4">
             {form.type === 'income' ? (
               <ArrowUpCircle className="w-6 h-6 text-green-600" />
