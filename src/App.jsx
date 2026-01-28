@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { PlusCircle, Trash2, Edit2, X, Check, TrendingUp, TrendingDown, Wallet, Calendar, Tag, LogOut, ArrowUpCircle, ArrowDownCircle, Image, Eye, BarChart3 } from 'lucide-react';
+import { PlusCircle, Trash2, Edit2, X, Check, TrendingUp, TrendingDown, Wallet, Calendar, Tag, LogOut, ArrowUpCircle, ArrowDownCircle, Image, Eye, BarChart3, Plane } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import Login from './Login';
 import InvestmentTracker from './InvestmentTracker';
+import TravelExpenses from './TravelExpenses';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -97,7 +98,7 @@ function App() {
       <nav className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex space-x-4 overflow-x-auto">
-            {['dashboard', 'transactions', 'categories', 'investments'].map(tab => (
+            {['dashboard', 'transactions', 'categories', 'investments', 'travel'].map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -107,6 +108,7 @@ function App() {
                   }`}
               >
                 {tab === 'investments' && <BarChart3 className="w-4 h-4" />}
+                {tab === 'travel' && <Plane className="w-4 h-4" />}
                 {tab}
               </button>
             ))}
@@ -159,6 +161,9 @@ function App() {
             )}
             {activeTab === 'investments' && (
               <InvestmentTracker formatCurrency={formatCurrency} />
+            )}
+            {activeTab === 'travel' && (
+              <TravelExpenses formatCurrency={formatCurrency} />
             )}
           </>
         )}
