@@ -24,6 +24,8 @@ function App() {
     startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
     endDate: new Date().toISOString().split('T')[0]
   });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryId, setCategoryId] = useState('');
 
   // Check if already authenticated
   useEffect(() => {
@@ -42,7 +44,7 @@ function App() {
     if (isAuthenticated) {
       fetchData();
     }
-  }, [dateRange, isAuthenticated]);
+  }, [dateRange, searchQuery, categoryId, isAuthenticated]);
 
   const handleLogout = () => {
     localStorage.removeItem('expense_auth');
@@ -52,10 +54,25 @@ function App() {
   async function fetchData() {
     setLoading(true);
     try {
+      let expenseParams = new URLSearchParams({
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
+        limit: 1000
+      });
+      if (searchQuery) expenseParams.append('search', searchQuery);
+      if (categoryId) expenseParams.append('categoryId', categoryId);
+
+      let statsParams = new URLSearchParams({
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate
+      });
+      if (searchQuery) statsParams.append('search', searchQuery);
+      if (categoryId) statsParams.append('categoryId', categoryId);
+
       const [expRes, catRes, statsRes] = await Promise.all([
-        fetch(`${API_URL}/api/expenses?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}&limit=1000`),
+        fetch(`${API_URL}/api/expenses?${expenseParams.toString()}`),
         fetch(`${API_URL}/api/categories`),
-        fetch(`${API_URL}/api/stats/summary?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`)
+        fetch(`${API_URL}/api/stats/summary?${statsParams.toString()}`)
       ]);
 
       setExpenses(await expRes.json());
@@ -133,6 +150,27 @@ function App() {
               onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
               className="border rounded-lg px-3 py-2 text-sm"
             />
+          </div>
+          <div className="flex items-center gap-2 ml-auto">
+             <input
+                type="text"
+                placeholder="Search descriptions..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="border rounded-lg px-3 py-2 w-64"
+             />
+             <select
+                 value={categoryId}
+                 onChange={(e) => setCategoryId(e.target.value)}
+                 className="border rounded-lg px-3 py-2 bg-white"
+             >
+                <option value="">All Categories</option>
+                {categories.map(c => (
+                   <option key={c.id} value={c.id}>
+                      {c.name}
+                   </option>
+                ))}
+             </select>
           </div>
         </div>
 
