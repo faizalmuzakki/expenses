@@ -69,7 +69,12 @@ export default function InvestmentTracker({ formatCurrency }) {
             setConfig({ monthly_budget: planData.monthlyBudget });
 
             const holdingsObj = {};
-            summaryData.holdings?.forEach(h => { holdingsObj[h.type] = h.current_value; });
+            summaryData.holdings?.forEach(h => {
+                holdingsObj[h.type] = {
+                    current_value: h.current_value ?? 0,
+                    current_grams: h.current_grams ?? 0
+                };
+            });
             setHoldingsForm(holdingsObj);
         } catch (error) {
             console.error('Error fetching investment data:', error);
@@ -114,7 +119,10 @@ export default function InvestmentTracker({ formatCurrency }) {
                     fetch(`${API_URL}/api/investments/holdings/${type}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ current_value: parseFloat(value) || 0 })
+                        body: JSON.stringify({
+                            current_value: parseFloat(value.current_value) || 0,
+                            ...(type === 'gold' ? { current_grams: parseFloat(value.current_grams) || 0 } : {})
+                        })
                     })
                 )
             );
@@ -201,6 +209,9 @@ export default function InvestmentTracker({ formatCurrency }) {
                     <div>
                         <p className="text-slate-400 text-sm mb-1">Total Portfolio</p>
                         <p className="text-2xl sm:text-4xl font-bold">{formatCurrency(summary.totalPortfolio)}</p>
+                        <p className="text-sm text-amber-300 mt-2">
+                            Gold: {(summary.goldHoldings?.currentGrams || 0).toFixed(2)} g
+                        </p>
                     </div>
                     <div className="text-right">
                         <p className="text-slate-400 text-sm mb-1">Monthly Budget</p>
@@ -362,6 +373,11 @@ export default function InvestmentTracker({ formatCurrency }) {
                                     <span className="font-medium">{cfg?.shortName}</span>
                                 </div>
                                 <p className="text-xl font-bold">{formatCurrency(a.value)}</p>
+                                {a.type === 'gold' && (
+                                    <p className="text-sm text-amber-600 mt-1">
+                                        {(summary.goldHoldings?.currentGrams || 0).toFixed(2)} g
+                                    </p>
+                                )}
                                 <div className="flex justify-between mt-2 text-sm">
                                     <span className="text-gray-500">{a.currentPercentage.toFixed(1)}% / {a.targetPercentage}%</span>
                                     <span className={diff >= 0 ? 'text-green-600' : 'text-red-600'}>
@@ -520,7 +536,36 @@ export default function InvestmentTracker({ formatCurrency }) {
                                 return (
                                     <div key={h.type}>
                                         <label className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2"><span>{cfg?.emoji}</span> {cfg?.name}</label>
-                                        <input type="number" value={holdingsForm[h.type] || 0} onChange={(e) => setHoldingsForm(prev => ({ ...prev, [h.type]: e.target.value }))} className="w-full border rounded-lg px-4 py-3 text-lg" />
+                                        <input
+                                            type="number"
+                                            value={holdingsForm[h.type]?.current_value ?? 0}
+                                            onChange={(e) => setHoldingsForm(prev => ({
+                                                ...prev,
+                                                [h.type]: {
+                                                    ...prev[h.type],
+                                                    current_value: e.target.value
+                                                }
+                                            }))}
+                                            className="w-full border rounded-lg px-4 py-3 text-lg"
+                                        />
+                                        {h.type === 'gold' && (
+                                            <div className="mt-3">
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Current Gold (grams)</label>
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={holdingsForm[h.type]?.current_grams ?? 0}
+                                                    onChange={(e) => setHoldingsForm(prev => ({
+                                                        ...prev,
+                                                        [h.type]: {
+                                                            ...prev[h.type],
+                                                            current_grams: e.target.value
+                                                        }
+                                                    }))}
+                                                    className="w-full border rounded-lg px-4 py-3 text-lg"
+                                                />
+                                            </div>
+                                        )}
                                         <p className="text-xs text-gray-500 mt-1">{h.platform}</p>
                                     </div>
                                 );
