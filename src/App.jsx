@@ -24,6 +24,7 @@ function App() {
     startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
     endDate: new Date().toISOString().split('T')[0]
   });
+  const [allTime, setAllTime] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryId, setCategoryId] = useState('');
 
@@ -44,7 +45,7 @@ function App() {
     if (isAuthenticated) {
       fetchData();
     }
-  }, [dateRange, searchQuery, categoryId, isAuthenticated]);
+  }, [dateRange, allTime, searchQuery, categoryId, isAuthenticated]);
 
   const handleLogout = () => {
     localStorage.removeItem('expense_auth');
@@ -54,18 +55,20 @@ function App() {
   async function fetchData() {
     setLoading(true);
     try {
-      let expenseParams = new URLSearchParams({
-        startDate: dateRange.startDate,
-        endDate: dateRange.endDate,
-        limit: 1000
-      });
+      // "All time" just drops the bounds - the API treats them as optional
+      let expenseParams = new URLSearchParams({ limit: 1000 });
+      if (!allTime) {
+        expenseParams.append('startDate', dateRange.startDate);
+        expenseParams.append('endDate', dateRange.endDate);
+      }
       if (searchQuery) expenseParams.append('search', searchQuery);
       if (categoryId) expenseParams.append('categoryId', categoryId);
 
-      let statsParams = new URLSearchParams({
-        startDate: dateRange.startDate,
-        endDate: dateRange.endDate
-      });
+      let statsParams = new URLSearchParams();
+      if (!allTime) {
+        statsParams.append('startDate', dateRange.startDate);
+        statsParams.append('endDate', dateRange.endDate);
+      }
       if (searchQuery) statsParams.append('search', searchQuery);
       if (categoryId) statsParams.append('categoryId', categoryId);
 
@@ -140,16 +143,29 @@ function App() {
             <input
               type="date"
               value={dateRange.startDate}
+              disabled={allTime}
               onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
-              className="border rounded-lg px-3 py-2 text-sm"
+              className="border rounded-lg px-3 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <span className="text-gray-500">to</span>
             <input
               type="date"
               value={dateRange.endDate}
+              disabled={allTime}
               onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
-              className="border rounded-lg px-3 py-2 text-sm"
+              className="border rounded-lg px-3 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             />
+            <button
+              type="button"
+              onClick={() => setAllTime(prev => !prev)}
+              aria-pressed={allTime}
+              title={allTime ? 'Showing all time - click to use the date range' : 'Ignore the date range and show everything'}
+              className={`rounded-lg px-3 py-2 text-sm border transition-colors ${allTime
+                ? 'bg-blue-600 border-blue-600 text-white hover:bg-blue-700'
+                : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'}`}
+            >
+              All time
+            </button>
           </div>
           <div className="flex items-center gap-2 ml-auto">
              <input
@@ -210,14 +226,25 @@ function App() {
   );
 }
 
+// Categories created by the spreadsheet backfill have a null color, and recharts
+// crashes on a null fill (`fill.includes is not a function`), taking the whole
+// dashboard down. Fall back to a stable palette so uncoloured slices stay distinct.
+const FALLBACK_CATEGORY_COLORS = [
+  '#6366F1', '#F59E0B', '#14B8A6', '#EC4899',
+  '#8B5CF6', '#0EA5E9', '#84CC16', '#F97316'
+];
+
+const categoryColor = (color, index) =>
+  color || FALLBACK_CATEGORY_COLORS[index % FALLBACK_CATEGORY_COLORS.length];
+
 function Dashboard({ stats, formatCurrency }) {
   const expenseData = stats.byCategory
     .filter(c => c.total > 0 && c.category_type === 'expense')
-    .map(c => ({ name: c.name, value: c.total, color: c.color }));
+    .map((c, i) => ({ name: c.name, value: c.total, color: categoryColor(c.color, i) }));
 
   const incomeData = stats.byCategory
     .filter(c => c.total > 0 && c.category_type === 'income')
-    .map(c => ({ name: c.name, value: c.total, color: c.color }));
+    .map((c, i) => ({ name: c.name, value: c.total, color: categoryColor(c.color, i) }));
 
   const summaryChartData = [
     { name: 'Income', value: stats.income || 0, color: '#10B981' },
