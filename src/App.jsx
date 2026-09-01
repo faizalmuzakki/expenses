@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { PlusCircle, Trash2, Edit2, X, Check, TrendingUp, TrendingDown, Wallet, Calendar, Tag, LogOut, ArrowUpCircle, ArrowDownCircle, Image, Eye, BarChart3, Plane } from 'lucide-react';
+import { PlusCircle, Trash2, Edit2, X, Check, TrendingUp, TrendingDown, Wallet, Calendar, Tag, LogOut, ArrowUpCircle, ArrowDownCircle, Image, Eye, BarChart3, Plane, Loader2 } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import Login from './Login';
 import InvestmentTracker from './InvestmentTracker';
@@ -458,6 +458,7 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
   const [editingId, setEditingId] = useState(null);
   const [typeFilter, setTypeFilter] = useState('all');
   const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     amount: '',
     description: '',
@@ -479,24 +480,40 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const url = editingId
-      ? `${API_URL}/api/expenses/${editingId}`
-      : `${API_URL}/api/expenses`;
+    if (submitting) return;
 
-    await fetch(url, {
-      method: editingId ? 'PUT' : 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...form,
-        amount: parseFloat(form.amount),
-        category_id: form.category_id ? parseInt(form.category_id) : null
-      })
-    });
+    setSubmitting(true);
+    try {
+      const url = editingId
+        ? `${API_URL}/api/expenses/${editingId}`
+        : `${API_URL}/api/expenses`;
 
-    setShowForm(false);
-    setEditingId(null);
-    setForm({ amount: '', description: '', vendor: '', category_id: '', date: new Date().toISOString().split('T')[0], type: 'expense' });
-    onRefresh();
+      const res = await fetch(url, {
+        method: editingId ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...form,
+          amount: parseFloat(form.amount),
+          category_id: form.category_id ? parseInt(form.category_id) : null
+        })
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        alert(errorData.error || `Failed to ${editingId ? 'update' : 'save'} transaction`);
+        return;
+      }
+
+      setShowForm(false);
+      setEditingId(null);
+      setForm({ amount: '', description: '', vendor: '', category_id: '', date: new Date().toISOString().split('T')[0], type: 'expense' });
+      onRefresh();
+    } catch (err) {
+      console.error('Error submitting transaction:', err);
+      alert('Failed to connect to server. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleEdit = (transaction, e) => {
@@ -709,7 +726,7 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
       </div>
 
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => { setShowForm(false); setEditingId(null); }}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => { if (!submitting) { setShowForm(false); setEditingId(null); } }}>
           <div
             className="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
@@ -728,8 +745,9 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
                   </h3>
                 </div>
                 <button
-                  onClick={() => { setShowForm(false); setEditingId(null); }}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  disabled={submitting}
+                  onClick={() => { if (!submitting) { setShowForm(false); setEditingId(null); } }}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <X className="w-5 h-5 text-gray-500" />
                 </button>
@@ -744,8 +762,9 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
                 <div className="flex bg-gray-100 rounded-lg p-1 w-fit">
                   <button
                     type="button"
+                    disabled={submitting}
                     onClick={() => handleTypeChange('expense')}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${form.type === 'expense'
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 ${form.type === 'expense'
                       ? 'bg-red-500 text-white'
                       : 'text-gray-600 hover:text-gray-900'
                       }`}
@@ -754,8 +773,9 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
                   </button>
                   <button
                     type="button"
+                    disabled={submitting}
                     onClick={() => handleTypeChange('income')}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${form.type === 'income'
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 ${form.type === 'income'
                       ? 'bg-green-500 text-white'
                       : 'text-gray-600 hover:text-gray-900'
                       }`}
@@ -772,9 +792,10 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
                     <input
                       type="number"
                       required
+                      disabled={submitting}
                       value={form.amount}
                       onChange={(e) => setForm(prev => ({ ...prev, amount: e.target.value }))}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border rounded-lg px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
                       placeholder="50000"
                     />
                   </div>
@@ -783,18 +804,20 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
                     <input
                       type="date"
                       required
+                      disabled={submitting}
                       value={form.date}
                       onChange={(e) => setForm(prev => ({ ...prev, date: e.target.value }))}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border rounded-lg px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                     <input
                       type="text"
+                      disabled={submitting}
                       value={form.description}
                       onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border rounded-lg px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
                       placeholder={form.type === 'income' ? 'Salary payment' : 'Lunch'}
                     />
                   </div>
@@ -804,18 +827,20 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
                     </label>
                     <input
                       type="text"
+                      disabled={submitting}
                       value={form.vendor}
                       onChange={(e) => setForm(prev => ({ ...prev, vendor: e.target.value }))}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border rounded-lg px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
                       placeholder={form.type === 'income' ? 'Company name' : 'Restaurant name'}
                     />
                   </div>
                   <div className="sm:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                     <select
+                      disabled={submitting}
                       value={form.category_id}
                       onChange={(e) => setForm(prev => ({ ...prev, category_id: e.target.value }))}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border rounded-lg px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
                     >
                       <option value="">Select category</option>
                       {filteredCategories.map(cat => (
@@ -827,18 +852,24 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
                 <div className="flex gap-2 pt-2">
                   <button
                     type="submit"
-                    className={`flex-1 flex items-center justify-center gap-2 text-white px-4 py-2 rounded-lg transition-colors ${form.type === 'income'
+                    disabled={submitting}
+                    className={`flex-1 flex items-center justify-center gap-2 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${form.type === 'income'
                       ? 'bg-green-600 hover:bg-green-700'
                       : 'bg-red-600 hover:bg-red-700'
                       }`}
                   >
-                    <Check className="w-5 h-5" />
-                    {editingId ? 'Update' : 'Save'}
+                    {submitting ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Check className="w-5 h-5" />
+                    )}
+                    {submitting ? (editingId ? 'Updating...' : 'Saving...') : (editingId ? 'Update' : 'Save')}
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setShowForm(false); setEditingId(null); }}
-                    className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                    disabled={submitting}
+                    onClick={() => { if (!submitting) { setShowForm(false); setEditingId(null); } }}
+                    className="px-4 py-2 border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Cancel
                   </button>
@@ -942,6 +973,7 @@ function CategoryList({ categories, onRefresh }) {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [typeFilter, setTypeFilter] = useState('all');
+  const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ name: '', icon: '', color: '#4ECDC4', type: 'expense' });
 
   const API_URL = import.meta.env.VITE_API_URL || '';
@@ -955,20 +987,36 @@ function CategoryList({ categories, onRefresh }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const url = editingId
-      ? `${API_URL}/api/categories/${editingId}`
-      : `${API_URL}/api/categories`;
+    if (submitting) return;
 
-    await fetch(url, {
-      method: editingId ? 'PUT' : 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form)
-    });
+    setSubmitting(true);
+    try {
+      const url = editingId
+        ? `${API_URL}/api/categories/${editingId}`
+        : `${API_URL}/api/categories`;
 
-    setShowForm(false);
-    setEditingId(null);
-    setForm({ name: '', icon: '', color: '#4ECDC4', type: 'expense' });
-    onRefresh();
+      const res = await fetch(url, {
+        method: editingId ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form)
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        alert(errorData.error || `Failed to ${editingId ? 'update' : 'save'} category`);
+        return;
+      }
+
+      setShowForm(false);
+      setEditingId(null);
+      setForm({ name: '', icon: '', color: '#4ECDC4', type: 'expense' });
+      onRefresh();
+    } catch (err) {
+      console.error('Error submitting category:', err);
+      alert('Failed to connect to server. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleEdit = (category) => {
@@ -1119,9 +1167,10 @@ function CategoryList({ categories, onRefresh }) {
                 <input
                   type="text"
                   required
+                  disabled={submitting}
                   value={form.name}
                   onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full border rounded-lg px-3 py-2 bg-white"
+                  className="w-full border rounded-lg px-3 py-2 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
                   placeholder="Category name"
                 />
               </div>
@@ -1129,9 +1178,10 @@ function CategoryList({ categories, onRefresh }) {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Icon (emoji)</label>
                 <input
                   type="text"
+                  disabled={submitting}
                   value={form.icon}
                   onChange={(e) => setForm(prev => ({ ...prev, icon: e.target.value }))}
-                  className="w-full border rounded-lg px-3 py-2 bg-white"
+                  className="w-full border rounded-lg px-3 py-2 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
                   placeholder={form.type === 'income' ? '💰' : '🍔'}
                 />
               </div>
@@ -1139,27 +1189,34 @@ function CategoryList({ categories, onRefresh }) {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Color</label>
                 <input
                   type="color"
+                  disabled={submitting}
                   value={form.color}
                   onChange={(e) => setForm(prev => ({ ...prev, color: e.target.value }))}
-                  className="w-full h-10 border rounded-lg cursor-pointer bg-white"
+                  className="w-full h-10 border rounded-lg cursor-pointer bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
             <div className="flex gap-2">
               <button
                 type="submit"
-                className={`flex items-center gap-2 text-white px-4 py-2 rounded-lg transition-colors ${form.type === 'income'
+                disabled={submitting}
+                className={`flex items-center gap-2 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${form.type === 'income'
                   ? 'bg-green-600 hover:bg-green-700'
                   : 'bg-red-600 hover:bg-red-700'
                   }`}
               >
-                <Check className="w-5 h-5" />
-                {editingId ? 'Update' : 'Save'}
+                {submitting ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Check className="w-5 h-5" />
+                )}
+                {submitting ? (editingId ? 'Updating...' : 'Saving...') : (editingId ? 'Update' : 'Save')}
               </button>
               <button
                 type="button"
-                onClick={() => { setShowForm(false); setEditingId(null); }}
-                className="flex items-center gap-2 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300"
+                disabled={submitting}
+                onClick={() => { if (!submitting) { setShowForm(false); setEditingId(null); } }}
+                className="flex items-center gap-2 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <X className="w-5 h-5" />
                 Cancel

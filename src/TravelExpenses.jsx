@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { PlusCircle, Trash2, Edit2, X, Check, Calendar, Search, Plane, RefreshCw, ChevronDown, ChevronUp, MapPin } from 'lucide-react';
+import { PlusCircle, Trash2, Edit2, X, Check, Calendar, Search, Plane, RefreshCw, ChevronDown, ChevronUp, MapPin, Loader2 } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
@@ -23,6 +23,7 @@ function TravelExpenses({ formatCurrency }) {
   // Expense form
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [editingExpenseId, setEditingExpenseId] = useState(null);
+  const [submittingExpense, setSubmittingExpense] = useState(false);
   const [expenseForm, setExpenseForm] = useState({
     amount: '',
     currency: 'USD',
@@ -41,6 +42,7 @@ function TravelExpenses({ formatCurrency }) {
   // Category form
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [editingCategoryId, setEditingCategoryId] = useState(null);
+  const [submittingCategory, setSubmittingCategory] = useState(false);
   const [categoryForm, setCategoryForm] = useState({
     name: '',
     icon: '',
@@ -144,36 +146,53 @@ function TravelExpenses({ formatCurrency }) {
   // Expense CRUD
   async function handleExpenseSubmit(e) {
     e.preventDefault();
-    const url = editingExpenseId ? `${TRAVEL_API}/${editingExpenseId}` : TRAVEL_API;
-    const body = {
-      amount: parseFloat(expenseForm.amount),
-      currency: expenseForm.currency,
-      converted_amount: expenseForm.converted_amount ? parseFloat(expenseForm.converted_amount) : null,
-      converted_currency: expenseForm.converted_currency,
-      exchange_rate: expenseForm.exchange_rate ? parseFloat(expenseForm.exchange_rate) : null,
-      description: expenseForm.description || null,
-      vendor: expenseForm.vendor || null,
-      category_id: expenseForm.category_id ? parseInt(expenseForm.category_id) : null,
-      date: expenseForm.date,
-      trip_name: expenseForm.trip_name || null,
-      source: expenseForm.source || 'manual',
-      notes: expenseForm.notes || null
-    };
+    if (submittingExpense) return;
 
-    await fetch(url, {
-      method: editingExpenseId ? 'PUT' : 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
+    setSubmittingExpense(true);
+    try {
+      const url = editingExpenseId ? `${TRAVEL_API}/${editingExpenseId}` : TRAVEL_API;
+      const body = {
+        amount: parseFloat(expenseForm.amount),
+        currency: expenseForm.currency,
+        converted_amount: expenseForm.converted_amount ? parseFloat(expenseForm.converted_amount) : null,
+        converted_currency: expenseForm.converted_currency,
+        exchange_rate: expenseForm.exchange_rate ? parseFloat(expenseForm.exchange_rate) : null,
+        description: expenseForm.description || null,
+        vendor: expenseForm.vendor || null,
+        category_id: expenseForm.category_id ? parseInt(expenseForm.category_id) : null,
+        date: expenseForm.date,
+        trip_name: expenseForm.trip_name || null,
+        source: expenseForm.source || 'manual',
+        notes: expenseForm.notes || null
+      };
 
-    resetExpenseForm();
-    await fetchExpenses();
-    // Refresh trips too
-    const tripsRes = await fetch(`${TRAVEL_API}/trips`);
-    setTrips(await tripsRes.json());
+      const res = await fetch(url, {
+        method: editingExpenseId ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        alert(errorData.error || `Failed to ${editingExpenseId ? 'update' : 'save'} travel expense`);
+        return;
+      }
+
+      resetExpenseForm();
+      await fetchExpenses();
+      // Refresh trips too
+      const tripsRes = await fetch(`${TRAVEL_API}/trips`);
+      setTrips(await tripsRes.json());
+    } catch (error) {
+      console.error('Error submitting travel expense:', error);
+      alert('Failed to connect to server. Please try again.');
+    } finally {
+      setSubmittingExpense(false);
+    }
   }
 
   function resetExpenseForm() {
+    if (submittingExpense) return;
     setShowExpenseForm(false);
     setEditingExpenseId(null);
     setExpenseForm({
@@ -227,21 +246,37 @@ function TravelExpenses({ formatCurrency }) {
   // Category CRUD
   async function handleCategorySubmit(e) {
     e.preventDefault();
-    const url = editingCategoryId
-      ? `${TRAVEL_API}/categories/${editingCategoryId}`
-      : `${TRAVEL_API}/categories`;
+    if (submittingCategory) return;
 
-    await fetch(url, {
-      method: editingCategoryId ? 'PUT' : 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(categoryForm)
-    });
+    setSubmittingCategory(true);
+    try {
+      const url = editingCategoryId
+        ? `${TRAVEL_API}/categories/${editingCategoryId}`
+        : `${TRAVEL_API}/categories`;
 
-    setShowCategoryForm(false);
-    setEditingCategoryId(null);
-    setCategoryForm({ name: '', icon: '', color: '#4ECDC4' });
-    const catRes = await fetch(`${TRAVEL_API}/categories`);
-    setCategories(await catRes.json());
+      const res = await fetch(url, {
+        method: editingCategoryId ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(categoryForm)
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        alert(errorData.error || `Failed to ${editingCategoryId ? 'update' : 'save'} category`);
+        return;
+      }
+
+      setShowCategoryForm(false);
+      setEditingCategoryId(null);
+      setCategoryForm({ name: '', icon: '', color: '#4ECDC4' });
+      const catRes = await fetch(`${TRAVEL_API}/categories`);
+      setCategories(await catRes.json());
+    } catch (error) {
+      console.error('Error submitting category:', error);
+      alert('Failed to connect to server. Please try again.');
+    } finally {
+      setSubmittingCategory(false);
+    }
   }
 
   async function handleDeleteCategory(id) {
@@ -404,7 +439,11 @@ function TravelExpenses({ formatCurrency }) {
                         {editingExpenseId ? 'Edit' : 'Add'} Travel Expense
                       </h3>
                     </div>
-                    <button onClick={resetExpenseForm} className="p-2 hover:bg-gray-100 rounded-lg">
+                    <button
+                      onClick={resetExpenseForm}
+                      disabled={submittingExpense}
+                      className="p-2 hover:bg-gray-100 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
                       <X className="w-5 h-5 text-gray-500" />
                     </button>
                   </div>
@@ -420,6 +459,7 @@ function TravelExpenses({ formatCurrency }) {
                           type="number"
                           step="any"
                           required
+                          disabled={submittingExpense}
                           value={expenseForm.amount}
                           onChange={e => {
                             const amt = e.target.value;
@@ -429,7 +469,7 @@ function TravelExpenses({ formatCurrency }) {
                               converted_amount: recalcConverted(amt, prev.exchange_rate)
                             }));
                           }}
-                          className="w-full border rounded-lg px-3 py-2"
+                          className="w-full border rounded-lg px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
                           placeholder="5000"
                         />
                       </div>
@@ -437,9 +477,10 @@ function TravelExpenses({ formatCurrency }) {
                         <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
                         <input
                           type="text"
+                          disabled={submittingExpense}
                           value={expenseForm.currency}
                           onChange={e => setExpenseForm(prev => ({ ...prev, currency: e.target.value.toUpperCase() }))}
-                          className="w-full border rounded-lg px-3 py-2"
+                          className="w-full border rounded-lg px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
                           placeholder="USD"
                           maxLength={3}
                         />
@@ -449,9 +490,10 @@ function TravelExpenses({ formatCurrency }) {
                         <input
                           type="date"
                           required
+                          disabled={submittingExpense}
                           value={expenseForm.date}
                           onChange={e => setExpenseForm(prev => ({ ...prev, date: e.target.value }))}
-                          className="w-full border rounded-lg px-3 py-2"
+                          className="w-full border rounded-lg px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
                         />
                       </div>
                     </div>
@@ -463,7 +505,7 @@ function TravelExpenses({ formatCurrency }) {
                         <button
                           type="button"
                           onClick={fetchExchangeRate}
-                          disabled={rateLoading}
+                          disabled={rateLoading || submittingExpense}
                           className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 disabled:opacity-50"
                         >
                           <RefreshCw className={`w-4 h-4 ${rateLoading ? 'animate-spin' : ''}`} />
@@ -476,6 +518,7 @@ function TravelExpenses({ formatCurrency }) {
                           <input
                             type="number"
                             step="any"
+                            disabled={submittingExpense}
                             value={expenseForm.exchange_rate}
                             onChange={e => {
                               const rate = e.target.value;
@@ -485,7 +528,7 @@ function TravelExpenses({ formatCurrency }) {
                                 converted_amount: recalcConverted(prev.amount, rate)
                               }));
                             }}
-                            className="w-full border rounded-lg px-3 py-2 text-sm"
+                            className="w-full border rounded-lg px-3 py-2 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
                             placeholder="106"
                           />
                         </div>
@@ -494,9 +537,10 @@ function TravelExpenses({ formatCurrency }) {
                           <input
                             type="number"
                             step="any"
+                            disabled={submittingExpense}
                             value={expenseForm.converted_amount}
                             onChange={e => setExpenseForm(prev => ({ ...prev, converted_amount: e.target.value }))}
-                            className="w-full border rounded-lg px-3 py-2 text-sm"
+                            className="w-full border rounded-lg px-3 py-2 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
                             placeholder="530000"
                           />
                         </div>
@@ -504,9 +548,10 @@ function TravelExpenses({ formatCurrency }) {
                           <label className="block text-xs text-gray-500 mb-1">Home Currency</label>
                           <input
                             type="text"
+                            disabled={submittingExpense}
                             value={expenseForm.converted_currency}
                             onChange={e => setExpenseForm(prev => ({ ...prev, converted_currency: e.target.value.toUpperCase() }))}
-                            className="w-full border rounded-lg px-3 py-2 text-sm"
+                            className="w-full border rounded-lg px-3 py-2 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
                             placeholder="IDR"
                             maxLength={3}
                           />
@@ -521,9 +566,10 @@ function TravelExpenses({ formatCurrency }) {
                         <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                         <input
                           type="text"
+                          disabled={submittingExpense}
                           value={expenseForm.description}
                           onChange={e => setExpenseForm(prev => ({ ...prev, description: e.target.value }))}
-                          className="w-full border rounded-lg px-3 py-2"
+                          className="w-full border rounded-lg px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
                           placeholder="Ramen lunch"
                           maxLength={500}
                         />
@@ -532,9 +578,10 @@ function TravelExpenses({ formatCurrency }) {
                         <label className="block text-sm font-medium text-gray-700 mb-1">Vendor</label>
                         <input
                           type="text"
+                          disabled={submittingExpense}
                           value={expenseForm.vendor}
                           onChange={e => setExpenseForm(prev => ({ ...prev, vendor: e.target.value }))}
-                          className="w-full border rounded-lg px-3 py-2"
+                          className="w-full border rounded-lg px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
                           placeholder="Ichiran"
                           maxLength={200}
                         />
@@ -546,9 +593,10 @@ function TravelExpenses({ formatCurrency }) {
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                         <select
+                          disabled={submittingExpense}
                           value={expenseForm.category_id}
                           onChange={e => setExpenseForm(prev => ({ ...prev, category_id: e.target.value }))}
-                          className="w-full border rounded-lg px-3 py-2"
+                          className="w-full border rounded-lg px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
                         >
                           <option value="">Select category</option>
                           {categories.map(c => (
@@ -560,9 +608,10 @@ function TravelExpenses({ formatCurrency }) {
                         <label className="block text-sm font-medium text-gray-700 mb-1">Trip Name</label>
                         <input
                           type="text"
+                          disabled={submittingExpense}
                           value={expenseForm.trip_name}
                           onChange={e => setExpenseForm(prev => ({ ...prev, trip_name: e.target.value }))}
-                          className="w-full border rounded-lg px-3 py-2"
+                          className="w-full border rounded-lg px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
                           placeholder="Japan 2026"
                           maxLength={200}
                           list="trip-names"
@@ -579,9 +628,10 @@ function TravelExpenses({ formatCurrency }) {
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                       <textarea
+                        disabled={submittingExpense}
                         value={expenseForm.notes}
                         onChange={e => setExpenseForm(prev => ({ ...prev, notes: e.target.value }))}
-                        className="w-full border rounded-lg px-3 py-2"
+                        className="w-full border rounded-lg px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
                         rows={2}
                         placeholder="Additional notes..."
                         maxLength={1000}
@@ -591,15 +641,21 @@ function TravelExpenses({ formatCurrency }) {
                     <div className="flex gap-2 pt-2">
                       <button
                         type="submit"
-                        className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                        disabled={submittingExpense}
+                        className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <Check className="w-5 h-5" />
-                        {editingExpenseId ? 'Update' : 'Save'}
+                        {submittingExpense ? (
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : (
+                          <Check className="w-5 h-5" />
+                        )}
+                        {submittingExpense ? (editingExpenseId ? 'Updating...' : 'Saving...') : (editingExpenseId ? 'Update' : 'Save')}
                       </button>
                       <button
                         type="button"
+                        disabled={submittingExpense}
                         onClick={resetExpenseForm}
-                        className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                        className="px-4 py-2 border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Cancel
                       </button>
@@ -1005,9 +1061,10 @@ function TravelExpenses({ formatCurrency }) {
                     <input
                       type="text"
                       required
+                      disabled={submittingCategory}
                       value={categoryForm.name}
                       onChange={e => setCategoryForm(p => ({ ...p, name: e.target.value }))}
-                      className="w-full border rounded-lg px-3 py-2 bg-white"
+                      className="w-full border rounded-lg px-3 py-2 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
                       placeholder="Category name"
                     />
                   </div>
@@ -1015,9 +1072,10 @@ function TravelExpenses({ formatCurrency }) {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Icon (emoji)</label>
                     <input
                       type="text"
+                      disabled={submittingCategory}
                       value={categoryForm.icon}
                       onChange={e => setCategoryForm(p => ({ ...p, icon: e.target.value }))}
-                      className="w-full border rounded-lg px-3 py-2 bg-white"
+                      className="w-full border rounded-lg px-3 py-2 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
                       placeholder="✈️"
                     />
                   </div>
@@ -1025,21 +1083,31 @@ function TravelExpenses({ formatCurrency }) {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Color</label>
                     <input
                       type="color"
+                      disabled={submittingCategory}
                       value={categoryForm.color}
                       onChange={e => setCategoryForm(p => ({ ...p, color: e.target.value }))}
-                      className="w-full h-10 border rounded-lg cursor-pointer bg-white"
+                      className="w-full h-10 border rounded-lg cursor-pointer bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
                     />
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button type="submit" className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-                    <Check className="w-5 h-5" />
-                    {editingCategoryId ? 'Update' : 'Save'}
+                  <button
+                    type="submit"
+                    disabled={submittingCategory}
+                    className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {submittingCategory ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Check className="w-5 h-5" />
+                    )}
+                    {submittingCategory ? (editingCategoryId ? 'Updating...' : 'Saving...') : (editingCategoryId ? 'Update' : 'Save')}
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setShowCategoryForm(false); setEditingCategoryId(null); }}
-                    className="flex items-center gap-2 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300"
+                    disabled={submittingCategory}
+                    onClick={() => { if (!submittingCategory) { setShowCategoryForm(false); setEditingCategoryId(null); } }}
+                    className="flex items-center gap-2 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <X className="w-5 h-5" /> Cancel
                   </button>

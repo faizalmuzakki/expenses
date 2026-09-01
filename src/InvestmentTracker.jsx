@@ -5,7 +5,7 @@ import {
 } from 'recharts';
 import {
     TrendingUp, Settings, PlusCircle, Check, X,
-    Target, Wallet, Edit2, History, AlertCircle, Shield, Building2, Briefcase
+    Target, Wallet, Edit2, History, AlertCircle, Shield, Building2, Briefcase, Loader2
 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
@@ -34,6 +34,7 @@ export default function InvestmentTracker({ formatCurrency }) {
     const [loading, setLoading] = useState(true);
     const [showSettings, setShowSettings] = useState(false);
     const [showContributeForm, setShowContributeForm] = useState(false);
+    const [submittingContribute, setSubmittingContribute] = useState(false);
     const [showEditHoldings, setShowEditHoldings] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
 
@@ -98,17 +99,28 @@ export default function InvestmentTracker({ formatCurrency }) {
 
     async function handleContribute(e) {
         e.preventDefault();
+        if (submittingContribute) return;
+
+        setSubmittingContribute(true);
         try {
-            await fetch(`${API_URL}/api/investments/contributions`, {
+            const res = await fetch(`${API_URL}/api/investments/contributions`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...contributeForm, amount: parseFloat(contributeForm.amount) })
             });
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                alert(errorData.error || 'Failed to record contribution');
+                return;
+            }
             setShowContributeForm(false);
             setContributeForm({ type: 'gold', amount: '', date: new Date().toISOString().split('T')[0], notes: '' });
             fetchData();
         } catch (error) {
             console.error('Error recording contribution:', error);
+            alert('Failed to connect to server. Please try again.');
+        } finally {
+            setSubmittingContribute(false);
         }
     }
 
@@ -480,19 +492,30 @@ export default function InvestmentTracker({ formatCurrency }) {
 
             {/* Contribute Modal */}
             {showContributeForm && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowContributeForm(false)}>
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => { if (!submittingContribute) setShowContributeForm(false); }}>
                     <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6" onClick={e => e.stopPropagation()}>
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-xl font-bold flex items-center gap-2"><PlusCircle className="w-6 h-6 text-green-500" /> Log Contribution</h3>
-                            <button onClick={() => setShowContributeForm(false)} className="p-2 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5" /></button>
+                            <button
+                                disabled={submittingContribute}
+                                onClick={() => { if (!submittingContribute) setShowContributeForm(false); }}
+                                className="p-2 hover:bg-gray-100 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
                         </div>
                         <form onSubmit={handleContribute} className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Asset</label>
                                 <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                                     {Object.entries(HOLDING_CONFIG).map(([type, cfg]) => (
-                                        <button key={type} type="button" onClick={() => setContributeForm(prev => ({ ...prev, type }))}
-                                            className={`p-2 rounded-xl border-2 transition-all ${contributeForm.type === type ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}>
+                                        <button
+                                            key={type}
+                                            type="button"
+                                            disabled={submittingContribute}
+                                            onClick={() => setContributeForm(prev => ({ ...prev, type }))}
+                                            className={`p-2 rounded-xl border-2 transition-all disabled:opacity-50 ${contributeForm.type === type ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}
+                                        >
                                             <span className="text-xl block">{cfg.emoji}</span>
                                             <span className="text-xs text-gray-600 block truncate">{cfg.shortName}</span>
                                         </button>
@@ -501,21 +524,61 @@ export default function InvestmentTracker({ formatCurrency }) {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Amount (IDR)</label>
-                                <input type="number" required value={contributeForm.amount} onChange={(e) => setContributeForm(prev => ({ ...prev, amount: e.target.value }))} className="w-full border rounded-lg px-4 py-3 text-lg" placeholder="5000000" />
+                                <input
+                                    type="number"
+                                    required
+                                    disabled={submittingContribute}
+                                    value={contributeForm.amount}
+                                    onChange={(e) => setContributeForm(prev => ({ ...prev, amount: e.target.value }))}
+                                    className="w-full border rounded-lg px-4 py-3 text-lg disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                    placeholder="5000000"
+                                />
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
-                                    <input type="date" required value={contributeForm.date} onChange={(e) => setContributeForm(prev => ({ ...prev, date: e.target.value }))} className="w-full border rounded-lg px-4 py-3" />
+                                    <input
+                                        type="date"
+                                        required
+                                        disabled={submittingContribute}
+                                        value={contributeForm.date}
+                                        onChange={(e) => setContributeForm(prev => ({ ...prev, date: e.target.value }))}
+                                        className="w-full border rounded-lg px-4 py-3 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                    />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
-                                    <input type="text" value={contributeForm.notes} onChange={(e) => setContributeForm(prev => ({ ...prev, notes: e.target.value }))} className="w-full border rounded-lg px-4 py-3" placeholder="Monthly" />
+                                    <input
+                                        type="text"
+                                        disabled={submittingContribute}
+                                        value={contributeForm.notes}
+                                        onChange={(e) => setContributeForm(prev => ({ ...prev, notes: e.target.value }))}
+                                        className="w-full border rounded-lg px-4 py-3 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                        placeholder="Monthly"
+                                    />
                                 </div>
                             </div>
                             <div className="flex gap-3 pt-2">
-                                <button type="submit" className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 flex items-center justify-center gap-2 font-medium"><Check className="w-4 h-4" /> Log</button>
-                                <button type="button" onClick={() => setShowContributeForm(false)} className="px-4 py-3 border rounded-lg hover:bg-gray-50">Cancel</button>
+                                <button
+                                    type="submit"
+                                    disabled={submittingContribute}
+                                    className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 flex items-center justify-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {submittingContribute ? (
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                    ) : (
+                                        <Check className="w-4 h-4" />
+                                    )}
+                                    {submittingContribute ? 'Logging...' : 'Log'}
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={submittingContribute}
+                                    onClick={() => { if (!submittingContribute) setShowContributeForm(false); }}
+                                    className="px-4 py-3 border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Cancel
+                                </button>
                             </div>
                         </form>
                     </div>
