@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { PlusCircle, Trash2, Edit2, X, Check, TrendingUp, TrendingDown, Wallet, Calendar, Tag, LogOut, ArrowUpCircle, ArrowDownCircle, Image, Eye, BarChart3, Plane, Loader2, Filter } from 'lucide-react';
+import { PlusCircle, Trash2, Edit2, X, Check, TrendingUp, TrendingDown, Wallet, Calendar, Tag, LogOut, ArrowUpCircle, ArrowDownCircle, Image, Eye, BarChart3, Plane, Loader2 } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import Login from './Login';
 import InvestmentTracker from './InvestmentTracker';
@@ -25,7 +25,6 @@ function App() {
     endDate: new Date().toISOString().split('T')[0]
   });
   const [allTime, setAllTime] = useState(false);
-  const [excludeMranggen, setExcludeMranggen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryId, setCategoryId] = useState('');
 
@@ -46,7 +45,7 @@ function App() {
     if (isAuthenticated) {
       fetchData();
     }
-  }, [dateRange, allTime, searchQuery, categoryId, excludeMranggen, isAuthenticated]);
+  }, [dateRange, allTime, searchQuery, categoryId, isAuthenticated]);
 
   const handleLogout = () => {
     localStorage.removeItem('expense_auth');
@@ -72,17 +71,6 @@ function App() {
       }
       if (searchQuery) statsParams.append('search', searchQuery);
       if (categoryId) statsParams.append('categoryId', categoryId);
-
-      if (excludeMranggen) {
-        const mranggenCat = categories.find(c => c.name && c.name.toLowerCase().includes('mranggen'));
-        if (mranggenCat && categoryId !== String(mranggenCat.id)) {
-          expenseParams.append('excludeCategoryId', mranggenCat.id);
-          statsParams.append('excludeCategoryId', mranggenCat.id);
-        } else if (!mranggenCat) {
-          expenseParams.append('excludeCategory', 'mranggen');
-          statsParams.append('excludeCategory', 'mranggen');
-        }
-      }
 
       const [expRes, catRes, statsRes] = await Promise.all([
         fetch(`${API_URL}/api/expenses?${expenseParams.toString()}`),
@@ -177,18 +165,6 @@ function App() {
                 : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'}`}
             >
               All time
-            </button>
-            <button
-              type="button"
-              onClick={() => setExcludeMranggen(prev => !prev)}
-              aria-pressed={excludeMranggen}
-              title={excludeMranggen ? 'Renov Mranggen excluded from calculations - click to include' : 'Exclude Renov Mranggen from overall income/expense calculation'}
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm border transition-colors ${excludeMranggen
-                ? 'bg-amber-600 border-amber-600 text-white hover:bg-amber-700'
-                : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'}`}
-            >
-              <Filter className="w-4 h-4" />
-              Exclude Renov Mranggen
             </button>
           </div>
           <div className="flex items-center gap-2 ml-auto">
@@ -998,7 +974,7 @@ function CategoryList({ categories, onRefresh }) {
   const [editingId, setEditingId] = useState(null);
   const [typeFilter, setTypeFilter] = useState('all');
   const [submitting, setSubmitting] = useState(false);
-  const [form, setForm] = useState({ name: '', icon: '', color: '#4ECDC4', type: 'expense' });
+  const [form, setForm] = useState({ name: '', icon: '', color: '#4ECDC4', type: 'expense', exclude_from_dashboard: false });
 
   const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -1022,7 +998,10 @@ function CategoryList({ categories, onRefresh }) {
       const res = await fetch(url, {
         method: editingId ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
+        body: JSON.stringify({
+          ...form,
+          exclude_from_dashboard: form.exclude_from_dashboard ? 1 : 0
+        })
       });
 
       if (!res.ok) {
@@ -1033,7 +1012,7 @@ function CategoryList({ categories, onRefresh }) {
 
       setShowForm(false);
       setEditingId(null);
-      setForm({ name: '', icon: '', color: '#4ECDC4', type: 'expense' });
+      setForm({ name: '', icon: '', color: '#4ECDC4', type: 'expense', exclude_from_dashboard: false });
       onRefresh();
     } catch (err) {
       console.error('Error submitting category:', err);
@@ -1048,7 +1027,8 @@ function CategoryList({ categories, onRefresh }) {
       name: category.name,
       icon: category.icon || '',
       color: category.color || '#4ECDC4',
-      type: category.type || 'expense'
+      type: category.type || 'expense',
+      exclude_from_dashboard: Boolean(category.exclude_from_dashboard)
     });
     setEditingId(category.id);
     setShowForm(true);
@@ -1079,8 +1059,15 @@ function CategoryList({ categories, onRefresh }) {
         </div>
         <div>
           <span className="font-medium">{category.name}</span>
-          <div className={`text-xs ${category.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
-            {category.type}
+          <div className="flex items-center gap-2 mt-0.5">
+            <span className={`text-xs ${category.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+              {category.type}
+            </span>
+            {Boolean(category.exclude_from_dashboard) && (
+              <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-medium">
+                Excluded from dashboard
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -1128,14 +1115,14 @@ function CategoryList({ categories, onRefresh }) {
         </div>
         <div className="flex gap-2 flex-wrap">
           <button
-            onClick={() => { setShowForm(true); setEditingId(null); setForm(prev => ({ ...prev, type: 'income', color: '#10B981' })); }}
+            onClick={() => { setShowForm(true); setEditingId(null); setForm(prev => ({ ...prev, type: 'income', color: '#10B981', exclude_from_dashboard: false })); }}
             className="flex items-center gap-2 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm"
           >
             <PlusCircle className="w-4 h-4" />
             <span className="hidden sm:inline">Add</span> Income <span className="hidden sm:inline">Category</span>
           </button>
           <button
-            onClick={() => { setShowForm(true); setEditingId(null); setForm(prev => ({ ...prev, type: 'expense', color: '#EF4444' })); }}
+            onClick={() => { setShowForm(true); setEditingId(null); setForm(prev => ({ ...prev, type: 'expense', color: '#EF4444', exclude_from_dashboard: false })); }}
             className="flex items-center gap-2 bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm"
           >
             <PlusCircle className="w-4 h-4" />
@@ -1220,6 +1207,25 @@ function CategoryList({ categories, onRefresh }) {
                 />
               </div>
             </div>
+
+            {/* Exclude from dashboard calculations toggle */}
+            <div className="flex items-start gap-3 p-3 bg-white rounded-lg border">
+              <input
+                type="checkbox"
+                id="exclude_from_dashboard"
+                disabled={submitting}
+                checked={form.exclude_from_dashboard}
+                onChange={(e) => setForm(prev => ({ ...prev, exclude_from_dashboard: e.target.checked }))}
+                className="mt-0.5 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer disabled:cursor-not-allowed"
+              />
+              <label htmlFor="exclude_from_dashboard" className="text-sm text-gray-700 cursor-pointer select-none">
+                <span className="font-medium">Exclude from dashboard calculations</span>
+                <span className="block text-xs text-gray-500">
+                  Transactions in this category will not be included in dashboard totals, net balance, or charts.
+                </span>
+              </label>
+            </div>
+
             <div className="flex gap-2">
               <button
                 type="submit"
