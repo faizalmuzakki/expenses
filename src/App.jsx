@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { PlusCircle, Trash2, Edit2, X, Check, TrendingUp, TrendingDown, Wallet, Calendar, Tag, LogOut, ArrowUpCircle, ArrowDownCircle, Image, Eye, BarChart3, Plane, Loader2 } from 'lucide-react';
+import { PlusCircle, Trash2, Edit2, X, Check, TrendingUp, TrendingDown, Wallet, Calendar, Tag, LogOut, ArrowUpCircle, ArrowDownCircle, Image, Eye, BarChart3, Plane, Loader2, Filter } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import Login from './Login';
 import InvestmentTracker from './InvestmentTracker';
@@ -25,6 +25,7 @@ function App() {
     endDate: new Date().toISOString().split('T')[0]
   });
   const [allTime, setAllTime] = useState(false);
+  const [excludeMranggen, setExcludeMranggen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryId, setCategoryId] = useState('');
 
@@ -45,7 +46,7 @@ function App() {
     if (isAuthenticated) {
       fetchData();
     }
-  }, [dateRange, allTime, searchQuery, categoryId, isAuthenticated]);
+  }, [dateRange, allTime, searchQuery, categoryId, excludeMranggen, isAuthenticated]);
 
   const handleLogout = () => {
     localStorage.removeItem('expense_auth');
@@ -71,6 +72,17 @@ function App() {
       }
       if (searchQuery) statsParams.append('search', searchQuery);
       if (categoryId) statsParams.append('categoryId', categoryId);
+
+      if (excludeMranggen) {
+        const mranggenCat = categories.find(c => c.name && c.name.toLowerCase().includes('mranggen'));
+        if (mranggenCat && categoryId !== String(mranggenCat.id)) {
+          expenseParams.append('excludeCategoryId', mranggenCat.id);
+          statsParams.append('excludeCategoryId', mranggenCat.id);
+        } else if (!mranggenCat) {
+          expenseParams.append('excludeCategory', 'mranggen');
+          statsParams.append('excludeCategory', 'mranggen');
+        }
+      }
 
       const [expRes, catRes, statsRes] = await Promise.all([
         fetch(`${API_URL}/api/expenses?${expenseParams.toString()}`),
@@ -165,6 +177,18 @@ function App() {
                 : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'}`}
             >
               All time
+            </button>
+            <button
+              type="button"
+              onClick={() => setExcludeMranggen(prev => !prev)}
+              aria-pressed={excludeMranggen}
+              title={excludeMranggen ? 'Renov Mranggen excluded from calculations - click to include' : 'Exclude Renov Mranggen from overall income/expense calculation'}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm border transition-colors ${excludeMranggen
+                ? 'bg-amber-600 border-amber-600 text-white hover:bg-amber-700'
+                : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'}`}
+            >
+              <Filter className="w-4 h-4" />
+              Exclude Renov Mranggen
             </button>
           </div>
           <div className="flex items-center gap-2 ml-auto">
