@@ -87,16 +87,22 @@ export default function InvestmentTracker({ formatCurrency }) {
     }
 
     async function handleSaveConfig() {
+        const budget = Number(config.monthly_budget);
+        if (config.monthly_budget === '' || !Number.isFinite(budget) || budget < 0) {
+            alert('Enter a monthly budget of 0 or more.');
+            return;
+        }
         try {
             await fetch(`${API_URL}/api/investments/config`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(config)
+                body: JSON.stringify({ monthly_budget: budget })
             });
             setShowSettings(false);
             fetchData();
         } catch (error) {
             console.error('Error saving config:', error);
+            alert(errorText(error));
         }
     }
 
@@ -140,6 +146,7 @@ export default function InvestmentTracker({ formatCurrency }) {
             fetchData();
         } catch (error) {
             console.error('Error updating holdings:', error);
+            alert(errorText(error));
         }
     }
 
@@ -432,7 +439,7 @@ export default function InvestmentTracker({ formatCurrency }) {
                     </>}
                 >
                     <Field label="Monthly Budget (IDR)">
-                        <div className="amount-box focus-within:border-carbon focus-within:shadow-[0_0_0_3px_var(--carbon-soft)]"><span className="amount-rp">Rp</span><input type="number" value={config.monthly_budget} onChange={(e) => setConfig({ monthly_budget: parseFloat(e.target.value) })} inputMode="numeric" className="amount-fig h-12 text-lg bg-transparent outline-none" /></div>
+                        <div className="amount-box focus-within:border-carbon focus-within:shadow-[0_0_0_3px_var(--carbon-soft)]"><span className="amount-rp">Rp</span><input type="number" value={config.monthly_budget} onChange={(e) => setConfig({ monthly_budget: e.target.value })} inputMode="numeric" className="amount-fig h-12 text-lg bg-transparent outline-none" /></div>
                     </Field>
                     <Terbilang value={config.monthly_budget} className="mt-2" />
                 </Dialog>

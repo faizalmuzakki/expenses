@@ -467,7 +467,12 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
   const handleDelete = async (id, e) => {
     e?.stopPropagation();
     if (!confirm('Delete this transaction?')) return;
-    await fetch(`${API_URL}/api/expenses/${id}`, { method: 'DELETE' });
+    try {
+      await fetch(`${API_URL}/api/expenses/${id}`, { method: 'DELETE' });
+    } catch (err) {
+      alert(errorText(err));
+      return;
+    }
     setSelectedTransaction(null);
     onRefresh();
   };

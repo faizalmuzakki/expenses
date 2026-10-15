@@ -1,2 +1,2 @@
 process.env.TZ = 'Asia/Jakarta';
-export default {};
+export default { esbuild: { jsx: 'automatic' } };
