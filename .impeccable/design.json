@@ -1,0 +1,623 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-15T11:22:33+00:00",
+  "title": "Design System: Finance Tracker",
+  "extensions": {
+    "colorMeta": {
+      "carbon": {
+        "role": "primary",
+        "displayName": "Carbon-Copy Violet",
+        "canonical": "oklch(43.8% 0.176 274.9)",
+        "dark": "#9599ff",
+        "tonalRamp": [
+          "oklch(15% 0.071 274.9)",
+          "oklch(26% 0.104 274.9)",
+          "oklch(37% 0.137 274.9)",
+          "oklch(48% 0.17 274.9)",
+          "oklch(60% 0.146 274.9)",
+          "oklch(72% 0.11 274.9)",
+          "oklch(84% 0.074 274.9)",
+          "oklch(95% 0.041 274.9)"
+        ]
+      },
+      "carbon-hover": {
+        "role": "primary",
+        "displayName": "Carbon Deep",
+        "canonical": "oklch(39.0% 0.164 274.5)",
+        "dark": "#aeb1ff",
+        "tonalRamp": [
+          "oklch(15% 0.066 274.5)",
+          "oklch(26% 0.097 274.5)",
+          "oklch(37% 0.128 274.5)",
+          "oklch(48% 0.158 274.5)",
+          "oklch(60% 0.136 274.5)",
+          "oklch(72% 0.102 274.5)",
+          "oklch(84% 0.069 274.5)",
+          "oklch(95% 0.038 274.5)"
+        ]
+      },
+      "carbon-soft": {
+        "role": "primary",
+        "displayName": "Carbon Wash",
+        "canonical": "oklch(93.6% 0.026 283.5)",
+        "dark": "#262966",
+        "tonalRamp": [
+          "oklch(15% 0.01 283.5)",
+          "oklch(26% 0.015 283.5)",
+          "oklch(37% 0.02 283.5)",
+          "oklch(48% 0.025 283.5)",
+          "oklch(60% 0.021 283.5)",
+          "oklch(72% 0.016 283.5)",
+          "oklch(84% 0.011 283.5)",
+          "oklch(95% 0.006 283.5)"
+        ]
+      },
+      "carbon-on": {
+        "role": "primary",
+        "displayName": "On Carbon",
+        "canonical": "oklch(100.0% 0.000 89.9)",
+        "dark": "#0f1018",
+        "tonalRamp": [
+          "oklch(15% 0.0 89.9)",
+          "oklch(26% 0.0 89.9)",
+          "oklch(37% 0.0 89.9)",
+          "oklch(48% 0.0 89.9)",
+          "oklch(60% 0.0 89.9)",
+          "oklch(72% 0.0 89.9)",
+          "oklch(84% 0.0 89.9)",
+          "oklch(95% 0.0 89.9)"
+        ]
+      },
+      "shell": {
+        "role": "primary",
+        "displayName": "Shell Violet",
+        "canonical": "oklch(43.8% 0.176 274.9)",
+        "dark": "#1d1f52",
+        "tonalRamp": [
+          "oklch(15% 0.071 274.9)",
+          "oklch(26% 0.104 274.9)",
+          "oklch(37% 0.137 274.9)",
+          "oklch(48% 0.17 274.9)",
+          "oklch(60% 0.146 274.9)",
+          "oklch(72% 0.11 274.9)",
+          "oklch(84% 0.074 274.9)",
+          "oklch(95% 0.041 274.9)"
+        ]
+      },
+      "shell-ink": {
+        "role": "primary",
+        "displayName": "Shell Ink",
+        "canonical": "oklch(100.0% 0.000 89.9)",
+        "dark": "#ffffff",
+        "tonalRamp": [
+          "oklch(15% 0.0 89.9)",
+          "oklch(26% 0.0 89.9)",
+          "oklch(37% 0.0 89.9)",
+          "oklch(48% 0.0 89.9)",
+          "oklch(60% 0.0 89.9)",
+          "oklch(72% 0.0 89.9)",
+          "oklch(84% 0.0 89.9)",
+          "oklch(95% 0.0 89.9)"
+        ]
+      },
+      "shell-dim": {
+        "role": "primary",
+        "displayName": "Shell Dim",
+        "canonical": "oklch(87.1% 0.052 282.9)",
+        "dark": "#b9bcf2",
+        "tonalRamp": [
+          "oklch(15% 0.021 282.9)",
+          "oklch(26% 0.031 282.9)",
+          "oklch(37% 0.041 282.9)",
+          "oklch(48% 0.051 282.9)",
+          "oklch(60% 0.043 282.9)",
+          "oklch(72% 0.033 282.9)",
+          "oklch(84% 0.022 282.9)",
+          "oklch(95% 0.012 282.9)"
+        ]
+      },
+      "in": {
+        "role": "secondary",
+        "displayName": "Ledger Green",
+        "canonical": "oklch(51.2% 0.117 157.5)",
+        "dark": "#4fd69b",
+        "tonalRamp": [
+          "oklch(15% 0.048 157.5)",
+          "oklch(26% 0.07 157.5)",
+          "oklch(37% 0.092 157.5)",
+          "oklch(48% 0.113 157.5)",
+          "oklch(60% 0.097 157.5)",
+          "oklch(72% 0.074 157.5)",
+          "oklch(84% 0.05 157.5)",
+          "oklch(95% 0.028 157.5)"
+        ]
+      },
+      "in-soft": {
+        "role": "secondary",
+        "displayName": "Ledger Green Wash",
+        "canonical": "oklch(94.6% 0.026 163.2)",
+        "dark": "#12382a",
+        "tonalRamp": [
+          "oklch(15% 0.011 163.2)",
+          "oklch(26% 0.016 163.2)",
+          "oklch(37% 0.021 163.2)",
+          "oklch(48% 0.026 163.2)",
+          "oklch(60% 0.022 163.2)",
+          "oklch(72% 0.017 163.2)",
+          "oklch(84% 0.011 163.2)",
+          "oklch(95% 0.006 163.2)"
+        ]
+      },
+      "out": {
+        "role": "secondary",
+        "displayName": "Materai Vermilion",
+        "canonical": "oklch(53.5% 0.182 31.7)",
+        "dark": "#ff8a76",
+        "tonalRamp": [
+          "oklch(15% 0.074 31.7)",
+          "oklch(26% 0.108 31.7)",
+          "oklch(37% 0.142 31.7)",
+          "oklch(48% 0.176 31.7)",
+          "oklch(60% 0.151 31.7)",
+          "oklch(72% 0.114 31.7)",
+          "oklch(84% 0.077 31.7)",
+          "oklch(95% 0.043 31.7)"
+        ]
+      },
+      "out-soft": {
+        "role": "secondary",
+        "displayName": "Materai Vermilion Wash",
+        "canonical": "oklch(93.8% 0.025 32.9)",
+        "dark": "#42201b",
+        "tonalRamp": [
+          "oklch(15% 0.01 32.9)",
+          "oklch(26% 0.015 32.9)",
+          "oklch(37% 0.02 32.9)",
+          "oklch(48% 0.024 32.9)",
+          "oklch(60% 0.021 32.9)",
+          "oklch(72% 0.016 32.9)",
+          "oklch(84% 0.011 32.9)",
+          "oklch(95% 0.006 32.9)"
+        ]
+      },
+      "warn": {
+        "role": "tertiary",
+        "displayName": "Stamp-Pad Amber",
+        "canonical": "oklch(49.4% 0.109 66.9)",
+        "dark": "#f2b85b",
+        "tonalRamp": [
+          "oklch(15% 0.044 66.9)",
+          "oklch(26% 0.065 66.9)",
+          "oklch(37% 0.085 66.9)",
+          "oklch(48% 0.106 66.9)",
+          "oklch(60% 0.091 66.9)",
+          "oklch(72% 0.068 66.9)",
+          "oklch(84% 0.046 66.9)",
+          "oklch(95% 0.026 66.9)"
+        ]
+      },
+      "warn-soft": {
+        "role": "tertiary",
+        "displayName": "Stamp-Pad Amber Wash",
+        "canonical": "oklch(95.6% 0.037 84.6)",
+        "dark": "#3a2a10",
+        "tonalRamp": [
+          "oklch(15% 0.015 84.6)",
+          "oklch(26% 0.022 84.6)",
+          "oklch(37% 0.029 84.6)",
+          "oklch(48% 0.036 84.6)",
+          "oklch(60% 0.031 84.6)",
+          "oklch(72% 0.023 84.6)",
+          "oklch(84% 0.016 84.6)",
+          "oklch(95% 0.009 84.6)"
+        ]
+      },
+      "ground": {
+        "role": "neutral",
+        "displayName": "Copy Paper",
+        "canonical": "oklch(96.5% 0.005 286.3)",
+        "dark": "#0f1018",
+        "tonalRamp": [
+          "oklch(15% 0.002 286.3)",
+          "oklch(26% 0.003 286.3)",
+          "oklch(37% 0.004 286.3)",
+          "oklch(48% 0.005 286.3)",
+          "oklch(60% 0.004 286.3)",
+          "oklch(72% 0.003 286.3)",
+          "oklch(84% 0.002 286.3)",
+          "oklch(95% 0.001 286.3)"
+        ]
+      },
+      "sheet": {
+        "role": "neutral",
+        "displayName": "Sheet",
+        "canonical": "oklch(100.0% 0.000 89.9)",
+        "dark": "#181926",
+        "tonalRamp": [
+          "oklch(15% 0.0 89.9)",
+          "oklch(26% 0.0 89.9)",
+          "oklch(37% 0.0 89.9)",
+          "oklch(48% 0.0 89.9)",
+          "oklch(60% 0.0 89.9)",
+          "oklch(72% 0.0 89.9)",
+          "oklch(84% 0.0 89.9)",
+          "oklch(95% 0.0 89.9)"
+        ]
+      },
+      "well": {
+        "role": "neutral",
+        "displayName": "Well",
+        "canonical": "oklch(94.5% 0.009 286.2)",
+        "dark": "#222335",
+        "tonalRamp": [
+          "oklch(15% 0.004 286.2)",
+          "oklch(26% 0.006 286.2)",
+          "oklch(37% 0.007 286.2)",
+          "oklch(48% 0.009 286.2)",
+          "oklch(60% 0.008 286.2)",
+          "oklch(72% 0.006 286.2)",
+          "oklch(84% 0.004 286.2)",
+          "oklch(95% 0.002 286.2)"
+        ]
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "oklch(91.2% 0.012 286.2)",
+        "dark": "#2b2d42",
+        "tonalRamp": [
+          "oklch(15% 0.005 286.2)",
+          "oklch(26% 0.007 286.2)",
+          "oklch(37% 0.009 286.2)",
+          "oklch(48% 0.012 286.2)",
+          "oklch(60% 0.01 286.2)",
+          "oklch(72% 0.008 286.2)",
+          "oklch(84% 0.005 286.2)",
+          "oklch(95% 0.003 286.2)"
+        ]
+      },
+      "rule-strong": {
+        "role": "neutral",
+        "displayName": "Strong Hairline",
+        "canonical": "oklch(84.2% 0.019 282.7)",
+        "dark": "#3d3f5a",
+        "tonalRamp": [
+          "oklch(15% 0.008 282.7)",
+          "oklch(26% 0.011 282.7)",
+          "oklch(37% 0.015 282.7)",
+          "oklch(48% 0.019 282.7)",
+          "oklch(60% 0.016 282.7)",
+          "oklch(72% 0.012 282.7)",
+          "oklch(84% 0.008 282.7)",
+          "oklch(95% 0.005 282.7)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "oklch(21.5% 0.039 280.4)",
+        "dark": "#ececf5",
+        "tonalRamp": [
+          "oklch(15% 0.016 280.4)",
+          "oklch(26% 0.023 280.4)",
+          "oklch(37% 0.03 280.4)",
+          "oklch(48% 0.038 280.4)",
+          "oklch(60% 0.032 280.4)",
+          "oklch(72% 0.024 280.4)",
+          "oklch(84% 0.017 280.4)",
+          "oklch(95% 0.009 280.4)"
+        ]
+      },
+      "ink-2": {
+        "role": "neutral",
+        "displayName": "Ink 2",
+        "canonical": "oklch(41.1% 0.043 280.9)",
+        "dark": "#b6b8ce",
+        "tonalRamp": [
+          "oklch(15% 0.018 280.9)",
+          "oklch(26% 0.026 280.9)",
+          "oklch(37% 0.034 280.9)",
+          "oklch(48% 0.042 280.9)",
+          "oklch(60% 0.036 280.9)",
+          "oklch(72% 0.027 280.9)",
+          "oklch(84% 0.018 280.9)",
+          "oklch(95% 0.01 280.9)"
+        ]
+      },
+      "ink-3": {
+        "role": "neutral",
+        "displayName": "Ink 3",
+        "canonical": "oklch(51.8% 0.039 281.3)",
+        "dark": "#9092ac",
+        "tonalRamp": [
+          "oklch(15% 0.016 281.3)",
+          "oklch(26% 0.023 281.3)",
+          "oklch(37% 0.031 281.3)",
+          "oklch(48% 0.038 281.3)",
+          "oklch(60% 0.033 281.3)",
+          "oklch(72% 0.025 281.3)",
+          "oklch(84% 0.017 281.3)",
+          "oklch(95% 0.009 281.3)"
+        ]
+      },
+      "hatch": {
+        "role": "primary",
+        "displayName": "Carbon Hatch",
+        "canonical": "rgba(59, 63, 176, 0.28)",
+        "dark": "rgba(149, 153, 255, 0.35)",
+        "purpose": "repeating-linear-gradient(-45deg, var(--hatch) 0 1px, transparent 1px 6px) on the amount-box currency tab only."
+      },
+      "scrim": {
+        "role": "neutral",
+        "displayName": "Scrim",
+        "canonical": "rgba(10, 11, 22, 0.55)",
+        "purpose": "Dialog backdrop, both themes."
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Period guide line and login wordmark; 24px on phones, 28px from 640px. One per screen."
+      },
+      "amount": {
+        "displayName": "Amount",
+        "purpose": "Figures inside amount boxes. 28px statement (24px on phones), 20px default, 16-18px compact and inputs."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Tab titles, dialog titles, header wordmark (800)."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Section titles inside a tab."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Rows, field values, button labels (600). Row names at 16px."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Meta lines, share percentages, chip text, italic terbilang line."
+      },
+      "label": {
+        "displayName": "Printed Form Head",
+        "purpose": "Condensed uppercase labels naming a field, figure or column; colour ink-3."
+      },
+      "stamp": {
+        "displayName": "Stamp",
+        "purpose": "Text inside rubber-stamp state marks."
+      }
+    },
+    "shadows": [
+      {
+        "name": "float",
+        "value": "0 1px 2px rgba(22,23,43,0.06), 0 8px 24px -12px rgba(22,23,43,0.18)",
+        "dark": "0 1px 2px rgba(0,0,0,0.4), 0 12px 32px -12px rgba(0,0,0,0.6)",
+        "purpose": "Dialogs and the login card only."
+      },
+      {
+        "name": "segment-pressed",
+        "value": "0 1px 2px rgba(0,0,0,0.12)",
+        "purpose": "Pressed option inside a segmented-control well."
+      },
+      {
+        "name": "focus-halo",
+        "value": "0 0 0 3px var(--carbon-soft)",
+        "purpose": "Fields and amount-box inputs on focus, with a carbon border."
+      },
+      {
+        "name": "focus-outline",
+        "value": "outline: 2px solid var(--carbon); outline-offset: 2px",
+        "purpose": "Every other focus-visible control."
+      }
+    ],
+    "motion": [
+      {
+        "name": "state",
+        "value": "150ms ease-out",
+        "purpose": "Background, colour, border and transform transitions on controls and rows."
+      },
+      {
+        "name": "press",
+        "value": "translateY(1px)",
+        "purpose": "Active state of buttons."
+      },
+      {
+        "name": "dialog-in",
+        "value": "200ms cubic-bezier(0.16, 1, 0.3, 1); from translateY(12px), opacity 0",
+        "purpose": "Dialog and bottom-sheet entrance; disabled under prefers-reduced-motion."
+      },
+      {
+        "name": "progress-line",
+        "value": "1.1s cubic-bezier(0.65, 0, 0.35, 1) infinite",
+        "purpose": "2px carbon bar sweeping under the filters while refetching; slows to 3s under reduced motion."
+      },
+      {
+        "name": "content-dim",
+        "value": "opacity 0.6, 200ms",
+        "purpose": "Existing content dims while a refetch is in flight."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px",
+        "purpose": "Statement strip goes three-up; dialogs centre; gutter 24px."
+      },
+      {
+        "name": "md",
+        "value": "768px",
+        "purpose": "Header tabs replace the bottom tab bar; transaction list becomes a five-column grid."
+      },
+      {
+        "name": "lg",
+        "value": "1024px",
+        "purpose": "Filters on one row; breakdowns side by side."
+      }
+    ],
+    "layout": {
+      "container": "1152px",
+      "gutter": "16px, 24px from 640px",
+      "headerHeight": "56px",
+      "bottomBarHeight": "64px",
+      "bottomReserve": "80px",
+      "range": "390-1440px, no horizontal scroll"
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Carbon-filled primary action: Edit, Save, Sign in.",
+      "html": "<button class=\"ds-btn-primary\">Save</button>",
+      "css": ":host{--ground:#f3f3f7;--sheet:#fff;--well:#ececf3;--rule:#e1e1ea;--rule-strong:#c9cad8;--ink:#16172b;--ink-2:#464862;--ink-3:#64667f;--carbon:#3b3fb0;--carbon-hover:#30339a;--carbon-soft:#e7e8fb;--carbon-on:#fff;--shell:#3b3fb0;--shell-ink:#fff;--shell-dim:#cfd1f7;--in:#0b7a4b;--in-soft:#def3e8;--out:#c0321c;--out-soft:#fbe5e0;--warn:#8a5300;--warn-soft:#fcefd5;--hatch:rgba(59,63,176,.28)} .ds-btn-primary{font-family:Archivo,ui-sans-serif,system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 16px;border-radius:8px;font-size:14px;font-weight:600;border:1px solid transparent;cursor:pointer;transition:background-color 150ms ease-out,color 150ms ease-out,border-color 150ms ease-out,transform 150ms ease-out;background:var(--carbon);color:var(--carbon-on)} .ds-btn-primary:hover{background:var(--carbon-hover)} .ds-btn-primary:focus-visible{outline:2px solid var(--carbon);outline-offset:2px;} .ds-btn-primary:active{transform:translateY(1px)}"
+    },
+    {
+      "name": "Direction Buttons",
+      "kind": "button",
+      "refersTo": "button-in",
+      "description": "Add income (ledger green) and Add expense (vermilion); always keep the word.",
+      "html": "<div class=\"ds-row\"><button class=\"ds-btn-in\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14\"/><path d=\"M12 5v14\"/></svg>Add income</button><button class=\"ds-btn-out\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14\"/><path d=\"M12 5v14\"/></svg>Add expense</button></div>",
+      "css": ":host{--ground:#f3f3f7;--sheet:#fff;--well:#ececf3;--rule:#e1e1ea;--rule-strong:#c9cad8;--ink:#16172b;--ink-2:#464862;--ink-3:#64667f;--carbon:#3b3fb0;--carbon-hover:#30339a;--carbon-soft:#e7e8fb;--carbon-on:#fff;--shell:#3b3fb0;--shell-ink:#fff;--shell-dim:#cfd1f7;--in:#0b7a4b;--in-soft:#def3e8;--out:#c0321c;--out-soft:#fbe5e0;--warn:#8a5300;--warn-soft:#fcefd5;--hatch:rgba(59,63,176,.28)} .ds-row{display:flex;gap:8px} .ds-btn-in,.ds-btn-out{font-family:Archivo,ui-sans-serif,system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 16px;border-radius:8px;font-size:14px;font-weight:600;border:1px solid transparent;cursor:pointer;transition:background-color 150ms ease-out,color 150ms ease-out,border-color 150ms ease-out,transform 150ms ease-out;padding:0 12px;color:var(--sheet)} .ds-btn-in{background:var(--in)} .ds-btn-out{background:var(--out)} .ds-btn-in:hover,.ds-btn-out:hover{opacity:.9} .ds-btn-in:focus-visible,.ds-btn-out:focus-visible{outline:2px solid var(--carbon);outline-offset:2px;} .ds-btn-in:active,.ds-btn-out:active{transform:translateY(1px)}"
+    },
+    {
+      "name": "Quiet Button",
+      "kind": "button",
+      "refersTo": "button-quiet",
+      "description": "Secondary action: Cancel, Reload; danger-quiet variant for Delete.",
+      "html": "<div class=\"ds-row\"><button class=\"ds-btn-quiet\">Cancel</button><button class=\"ds-btn-danger\">Delete</button></div>",
+      "css": ":host{--ground:#f3f3f7;--sheet:#fff;--well:#ececf3;--rule:#e1e1ea;--rule-strong:#c9cad8;--ink:#16172b;--ink-2:#464862;--ink-3:#64667f;--carbon:#3b3fb0;--carbon-hover:#30339a;--carbon-soft:#e7e8fb;--carbon-on:#fff;--shell:#3b3fb0;--shell-ink:#fff;--shell-dim:#cfd1f7;--in:#0b7a4b;--in-soft:#def3e8;--out:#c0321c;--out-soft:#fbe5e0;--warn:#8a5300;--warn-soft:#fcefd5;--hatch:rgba(59,63,176,.28)} .ds-row{display:flex;gap:8px} .ds-btn-quiet,.ds-btn-danger{font-family:Archivo,ui-sans-serif,system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 16px;border-radius:8px;font-size:14px;font-weight:600;border:1px solid transparent;cursor:pointer;transition:background-color 150ms ease-out,color 150ms ease-out,border-color 150ms ease-out,transform 150ms ease-out;background:var(--sheet);border-color:var(--rule-strong);color:var(--ink)} .ds-btn-danger{color:var(--out)} .ds-btn-quiet:hover{background:var(--well)} .ds-btn-danger:hover{background:var(--out-soft)} .ds-btn-quiet:focus-visible,.ds-btn-danger:focus-visible{outline:2px solid var(--carbon);outline-offset:2px;} .ds-btn-quiet:active,.ds-btn-danger:active{transform:translateY(1px)}"
+    },
+    {
+      "name": "Amount Box",
+      "kind": "custom",
+      "refersTo": "amount-box",
+      "description": "The signature kwitansi field: hatched currency tab plus right-aligned tabular figure, with terbilang underneath when verifying.",
+      "html": "<div class=\"ds-wrap\"><span class=\"ds-head\">Money in</span><div class=\"ds-amount\"><span class=\"ds-rp\">Rp</span><span class=\"ds-fig\">1.250.000</span></div><p class=\"ds-terbilang\">Satu juta dua ratus lima puluh ribu rupiah</p></div>",
+      "css": ":host{--ground:#f3f3f7;--sheet:#fff;--well:#ececf3;--rule:#e1e1ea;--rule-strong:#c9cad8;--ink:#16172b;--ink-2:#464862;--ink-3:#64667f;--carbon:#3b3fb0;--carbon-hover:#30339a;--carbon-soft:#e7e8fb;--carbon-on:#fff;--shell:#3b3fb0;--shell-ink:#fff;--shell-dim:#cfd1f7;--in:#0b7a4b;--in-soft:#def3e8;--out:#c0321c;--out-soft:#fbe5e0;--warn:#8a5300;--warn-soft:#fcefd5;--hatch:rgba(59,63,176,.28)} .ds-wrap{font-family:Archivo,ui-sans-serif,system-ui,sans-serif;width:320px} .ds-head{display:block;margin-bottom:8px;font-size:11px;line-height:16px;font-weight:650;font-stretch:80%;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)} .ds-amount{display:flex;align-items:stretch;border:1px solid var(--rule-strong);border-radius:8px;background:var(--sheet);overflow:hidden;transition:border-color 150ms ease-out,box-shadow 150ms ease-out} .ds-amount:hover{border-color:var(--carbon);box-shadow:0 0 0 3px var(--carbon-soft)} .ds-rp{display:flex;align-items:center;padding:0 8px;font-weight:700;font-stretch:80%;font-size:13px;color:var(--ink-2);border-right:1px solid var(--rule-strong);background-image:repeating-linear-gradient(-45deg,var(--hatch) 0 1px,transparent 1px 6px)} .ds-fig{flex:1;padding:6px 10px;text-align:right;font-size:28px;font-weight:700;letter-spacing:-.01em;font-variant-numeric:tabular-nums lining-nums;white-space:nowrap;color:var(--in)} .ds-terbilang{margin:6px 0 0;font-size:12px;font-style:italic;color:var(--ink-3)}"
+    },
+    {
+      "name": "Field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "Text, date and select inputs under a printed form head; carbon border and wash halo on focus.",
+      "html": "<label class=\"ds-field-wrap\"><span class=\"ds-head\">Vendor</span><input class=\"ds-field\" placeholder=\"e.g. Superindo\"></label>",
+      "css": ":host{--ground:#f3f3f7;--sheet:#fff;--well:#ececf3;--rule:#e1e1ea;--rule-strong:#c9cad8;--ink:#16172b;--ink-2:#464862;--ink-3:#64667f;--carbon:#3b3fb0;--carbon-hover:#30339a;--carbon-soft:#e7e8fb;--carbon-on:#fff;--shell:#3b3fb0;--shell-ink:#fff;--shell-dim:#cfd1f7;--in:#0b7a4b;--in-soft:#def3e8;--out:#c0321c;--out-soft:#fbe5e0;--warn:#8a5300;--warn-soft:#fcefd5;--hatch:rgba(59,63,176,.28)} .ds-field-wrap{font-family:Archivo,ui-sans-serif,system-ui,sans-serif;display:block;width:280px} .ds-head{display:block;margin-bottom:6px;font-size:11px;line-height:16px;font-weight:650;font-stretch:80%;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)} .ds-field{font-family:Archivo,ui-sans-serif,system-ui,sans-serif;width:100%;box-sizing:border-box;height:40px;padding:0 12px;border-radius:8px;border:1px solid var(--rule-strong);background:var(--sheet);color:var(--ink);font-size:14px;transition:border-color 150ms ease-out,box-shadow 150ms ease-out} .ds-field::placeholder{color:var(--ink-3)} .ds-field:focus{outline:none;border-color:var(--carbon);box-shadow:0 0 0 3px var(--carbon-soft)} .ds-field:disabled{background:var(--well);color:var(--ink-3)}"
+    },
+    {
+      "name": "Segmented Control",
+      "kind": "custom",
+      "refersTo": "segmented",
+      "description": "Type filter: pressed option is a sheet lifted out of the well.",
+      "html": "<div class=\"ds-seg\" role=\"group\"><button class=\"ds-seg-btn\" aria-pressed=\"true\">All</button><button class=\"ds-seg-btn\" aria-pressed=\"false\">Expense</button><button class=\"ds-seg-btn\" aria-pressed=\"false\">Income</button></div>",
+      "css": ":host{--ground:#f3f3f7;--sheet:#fff;--well:#ececf3;--rule:#e1e1ea;--rule-strong:#c9cad8;--ink:#16172b;--ink-2:#464862;--ink-3:#64667f;--carbon:#3b3fb0;--carbon-hover:#30339a;--carbon-soft:#e7e8fb;--carbon-on:#fff;--shell:#3b3fb0;--shell-ink:#fff;--shell-dim:#cfd1f7;--in:#0b7a4b;--in-soft:#def3e8;--out:#c0321c;--out-soft:#fbe5e0;--warn:#8a5300;--warn-soft:#fcefd5;--hatch:rgba(59,63,176,.28)} .ds-seg{font-family:Archivo,ui-sans-serif,system-ui,sans-serif;display:inline-flex;gap:4px;padding:4px;border-radius:8px;background:var(--well)} .ds-seg-btn{font-family:Archivo,ui-sans-serif,system-ui,sans-serif;height:32px;padding:0 12px;border:0;border-radius:6px;background:transparent;font-size:14px;font-weight:600;color:var(--ink-2);cursor:pointer;transition:background-color 150ms ease-out,color 150ms ease-out} .ds-seg-btn:hover{color:var(--ink)} .ds-seg-btn[aria-pressed=true]{background:var(--sheet);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)} .ds-seg-btn:focus-visible{outline:2px solid var(--carbon);outline-offset:2px;}"
+    },
+    {
+      "name": "Chip and Stamps",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Category chip (colour on the dot only) and rubber-stamp state marks.",
+      "html": "<div class=\"ds-row\"><span class=\"ds-chip\"><span class=\"ds-dot\"></span>Belanja</span><span class=\"ds-stamp ds-in\">Income</span><span class=\"ds-stamp ds-out\">Expense</span><span class=\"ds-stamp ds-carbon\">Receipt</span><span class=\"ds-stamp ds-warn\">Excluded from dashboard</span></div>",
+      "css": ":host{--ground:#f3f3f7;--sheet:#fff;--well:#ececf3;--rule:#e1e1ea;--rule-strong:#c9cad8;--ink:#16172b;--ink-2:#464862;--ink-3:#64667f;--carbon:#3b3fb0;--carbon-hover:#30339a;--carbon-soft:#e7e8fb;--carbon-on:#fff;--shell:#3b3fb0;--shell-ink:#fff;--shell-dim:#cfd1f7;--in:#0b7a4b;--in-soft:#def3e8;--out:#c0321c;--out-soft:#fbe5e0;--warn:#8a5300;--warn-soft:#fcefd5;--hatch:rgba(59,63,176,.28)} .ds-row{font-family:Archivo,ui-sans-serif,system-ui,sans-serif;display:flex;flex-wrap:wrap;align-items:center;gap:8px} .ds-chip{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px 0 8px;border-radius:9999px;background:var(--well);color:var(--ink-2);font-size:12px;font-weight:500} .ds-dot{width:8px;height:8px;border-radius:9999px;background:#f59e0b;box-shadow:0 0 0 1px var(--rule-strong)} .ds-stamp{display:inline-flex;align-items:center;height:20px;padding:0 6px;border:1px solid currentColor;border-radius:4px;font-size:10px;font-weight:700;font-stretch:80%;letter-spacing:.06em;text-transform:uppercase} .ds-in{color:var(--in)} .ds-out{color:var(--out)} .ds-carbon{color:var(--carbon)} .ds-warn{color:var(--warn)}"
+    },
+    {
+      "name": "Transaction Rows",
+      "kind": "card",
+      "refersTo": "sheet",
+      "description": "Flat sheet with a sticky well date band; income signed green, expense signed ink.",
+      "html": "<div class=\"ds-sheet\"><div class=\"ds-band\">Thu, 15 Oct 2026</div><a class=\"ds-r\" href=\"#\"><span><b>Nasi padang</b><small>RM Sederhana</small></span><span class=\"ds-amt\">−Rp 48.000</span></a><a class=\"ds-r\" href=\"#\"><span><b>Gaji Oktober</b><small>PT Contoh Sejahtera</small></span><span class=\"ds-amt ds-pos\">+Rp 18.250.000</span></a></div>",
+      "css": ":host{--ground:#f3f3f7;--sheet:#fff;--well:#ececf3;--rule:#e1e1ea;--rule-strong:#c9cad8;--ink:#16172b;--ink-2:#464862;--ink-3:#64667f;--carbon:#3b3fb0;--carbon-hover:#30339a;--carbon-soft:#e7e8fb;--carbon-on:#fff;--shell:#3b3fb0;--shell-ink:#fff;--shell-dim:#cfd1f7;--in:#0b7a4b;--in-soft:#def3e8;--out:#c0321c;--out-soft:#fbe5e0;--warn:#8a5300;--warn-soft:#fcefd5;--hatch:rgba(59,63,176,.28)} .ds-sheet{font-family:Archivo,ui-sans-serif,system-ui,sans-serif;width:360px;background:var(--sheet);border:1px solid var(--rule);border-radius:8px;overflow:hidden} .ds-band{padding:6px 16px;background:var(--well);border-bottom:1px solid var(--rule);font-size:12px;font-weight:700;color:var(--ink-2)} .ds-r{display:flex;justify-content:space-between;gap:12px;padding:12px 16px;color:var(--ink);text-decoration:none;transition:background-color 150ms ease-out} .ds-r+.ds-r{border-top:1px solid var(--rule)} .ds-r:hover{background:var(--well)} .ds-r:focus-visible{outline:2px solid var(--carbon);outline-offset:2px;outline-offset:-2px} .ds-r b{display:block;font-weight:600} .ds-r small{display:block;margin-top:2px;font-size:14px;color:var(--ink-3)} .ds-amt{font-weight:600;font-variant-numeric:tabular-nums lining-nums;white-space:nowrap} .ds-pos{color:var(--in)}"
+    },
+    {
+      "name": "Shell Navigation",
+      "kind": "nav",
+      "refersTo": "shell-header",
+      "description": "Violet header with desktop tabs; current tab underlined in shell ink.",
+      "html": "<nav class=\"ds-shell\"><span class=\"ds-mark\">Finance Tracker</span><a class=\"ds-tab\" aria-current=\"page\" href=\"#\">Dashboard</a><a class=\"ds-tab\" href=\"#\">Transactions</a><a class=\"ds-tab\" href=\"#\">Categories</a></nav>",
+      "css": ":host{--ground:#f3f3f7;--sheet:#fff;--well:#ececf3;--rule:#e1e1ea;--rule-strong:#c9cad8;--ink:#16172b;--ink-2:#464862;--ink-3:#64667f;--carbon:#3b3fb0;--carbon-hover:#30339a;--carbon-soft:#e7e8fb;--carbon-on:#fff;--shell:#3b3fb0;--shell-ink:#fff;--shell-dim:#cfd1f7;--in:#0b7a4b;--in-soft:#def3e8;--out:#c0321c;--out-soft:#fbe5e0;--warn:#8a5300;--warn-soft:#fcefd5;--hatch:rgba(59,63,176,.28)} .ds-shell{font-family:Archivo,ui-sans-serif,system-ui,sans-serif;display:flex;align-items:stretch;gap:4px;height:56px;padding:0 24px;background:var(--shell);color:var(--shell-ink)} .ds-mark{align-self:center;margin-right:28px;font-size:18px;font-weight:800;letter-spacing:-.025em} .ds-tab{position:relative;display:flex;align-items:center;padding:0 12px;font-size:14px;font-weight:600;color:var(--shell-dim);text-decoration:none;transition:color 150ms ease-out} .ds-tab:hover,.ds-tab[aria-current=page]{color:var(--shell-ink)} .ds-tab[aria-current=page]::after{content:'';position:absolute;left:12px;right:12px;bottom:0;height:3px;border-radius:3px 3px 0 0;background:var(--shell-ink)} .ds-tab:focus-visible{outline:2px solid var(--shell-ink);outline-offset:-2px}"
+    },
+    {
+      "name": "Bottom Tab Bar",
+      "kind": "nav",
+      "refersTo": "bottom-tab-bar",
+      "description": "Phone navigation below 768px: five columns, carbon current tab with a hanging marker.",
+      "html": "<nav class=\"ds-bar\"><a class=\"ds-bt\" aria-current=\"page\" href=\"#\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.25\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"9\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"5\" rx=\"1\"/><rect x=\"14\" y=\"12\" width=\"7\" height=\"9\" rx=\"1\"/><rect x=\"3\" y=\"16\" width=\"7\" height=\"5\" rx=\"1\"/></svg>Dashboard</a><a class=\"ds-bt\" href=\"#\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\"><path d=\"M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z\"/><path d=\"M16 8H8M16 12H8M13 16H8\"/></svg>Transactions</a><a class=\"ds-bt\" href=\"#\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\"><path d=\"m22 7-8.5 8.5-5-5L2 17\"/><path d=\"M16 7h6v6\"/></svg>Investments</a></nav>",
+      "css": ":host{--ground:#f3f3f7;--sheet:#fff;--well:#ececf3;--rule:#e1e1ea;--rule-strong:#c9cad8;--ink:#16172b;--ink-2:#464862;--ink-3:#64667f;--carbon:#3b3fb0;--carbon-hover:#30339a;--carbon-soft:#e7e8fb;--carbon-on:#fff;--shell:#3b3fb0;--shell-ink:#fff;--shell-dim:#cfd1f7;--in:#0b7a4b;--in-soft:#def3e8;--out:#c0321c;--out-soft:#fbe5e0;--warn:#8a5300;--warn-soft:#fcefd5;--hatch:rgba(59,63,176,.28)} .ds-bar{font-family:Archivo,ui-sans-serif,system-ui,sans-serif;display:grid;grid-template-columns:repeat(3,1fr);width:360px;background:var(--sheet);border-top:1px solid var(--rule)} .ds-bt{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:64px;font-size:11px;font-weight:600;color:var(--ink-3);text-decoration:none;transition:color 150ms ease-out} .ds-bt:hover{color:var(--ink)} .ds-bt[aria-current=page]{color:var(--carbon)} .ds-bt[aria-current=page]::before{content:'';position:absolute;top:0;left:16px;right:16px;height:3px;border-radius:0 0 3px 3px;background:var(--carbon)} .ds-bt:focus-visible{outline:2px solid var(--carbon);outline-offset:2px;outline-offset:-2px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Kwitansi Pad",
+    "overview": "The app is a pad of Indonesian kwitansi receipts torn off and filed by period. Every money figure that matters is written into a printed amount box: a small hatched currency tab, a hairline frame, and a right-aligned tabular figure. Where an amount is being written or checked, it is also spelled out in words underneath, the way a receipt carries the terbilang line. The shell is the colour of carbon-copy paper: one confident violet that owns the header and the primary action, on a cool copy-paper ground with white sheets laid on it.\n\nDensity is that of a working ledger, not a marketing dashboard. Sheets are flat and separated by hairline rules; rows are 48 to 56px tall; labels are printed form heads in condensed caps. Numbers are the loudest thing on any screen, and they are always tabular. Colour carries direction (ledger green for money in, materai vermilion for money out) but never alone: every directed amount also carries a sign or a word. The world refuses the category default of pastel stat cards with icon tiles and decorative pie charts; summaries are boxed figures and ranked category lists with thin share bars.\n\nLight and dark follow the system preference through CSS custom properties. Dark mode is night carbon: a near-black blue ground, a deep violet shell, and the accents lifted in lightness so they keep AA contrast.",
+    "keyCharacteristics": [
+      "One grotesk (Archivo) used across its width axis: condensed caps for printed labels and stamps, normal width for everything else.",
+      "Tabular, lining numerals everywhere, set on `body`.",
+      "The amount box with a diagonally hatched currency tab is the signature.",
+      "Flat sheets on a tinted ground; shadow only on things that float.",
+      "Direction is sign + word + hue, never hue alone.",
+      "Phone gets a thumb-reachable bottom tab bar; desktop gets tabs in the violet header."
+    ],
+    "rules": [
+      {
+        "name": "The Sign-And-Word Rule",
+        "body": "Money direction is never colour-only. Income rows read `+Rp …` in ledger green; expense rows read `−Rp …` (a true minus, U+2212); summary figures sit under a printed label (\"Money in\", \"Money out\", \"Left over\"); dialogs and stamps say \"Income\" or \"Expense\".",
+        "section": "colors"
+      },
+      {
+        "name": "The Quiet Expense Row Rule",
+        "body": "In transaction lists, expense amounts stay ink with a minus sign. Vermilion is for totals, stamps, the add-expense action and destructive actions, so a normal day's list is not a wall of red.",
+        "section": "colors"
+      },
+      {
+        "name": "The Carbon Owns The Shell Rule",
+        "body": "Carbon violet marks the shell, the primary action, focus and the current place. It is not used to decorate sheets, headings or illustrations.",
+        "section": "colors"
+      },
+      {
+        "name": "The Dot Carries The Colour Rule",
+        "body": "User-chosen category colours appear only as an 8px dot (ringed in `rule-strong`) or a share bar. Category names stay in ink, so any colour a user picks remains legible in both themes.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Everywhere Rule",
+        "body": "`tabular-nums` is set on the body, and `.num` adds lining figures and no-wrap. Any element showing a date, count, percentage or amount uses it so columns of figures align without a table.",
+        "section": "typography"
+      },
+      {
+        "name": "The Printed Form Head Rule",
+        "body": "The condensed-caps label always names the field, figure or column directly beneath or beside it. It is never a decorative kicker above a heading.",
+        "section": "typography"
+      },
+      {
+        "name": "The Terbilang Rule",
+        "body": "The spelled-out amount (\"satu juta dua ratus lima puluh ribu rupiah\", 12px italic `ink-3`, first letter capitalised) appears only where an amount is being written (forms) or verified (the transaction detail view). It never appears in lists or dashboard totals.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Sheet Rule",
+        "body": "Sheets, cards and list rows have no shadow at rest or on hover. Hover is a `well` background shift; elevation is reserved for dialogs and the login card.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** put every statement total and every amount being entered into the amount box, with the currency in the hatched tab.",
+      "**Do** write list amounts as signed tabular figures: `+` and ledger green for income, `−` and ink for expenses.",
+      "**Do** spell the amount out (terbilang, 12px italic `ink-3`) under amount inputs and on the transaction detail.",
+      "**Do** name the period in words at the top of any period-scoped view.",
+      "**Do** use the CSS custom properties through the Tailwind colour names (`bg-sheet`, `text-ink-3`, `border-rule-strong`) so light and dark switch together, with no `dark:` variants.",
+      "**Do** mark states (Income, Expense, Receipt, Excluded from dashboard) with stamps, coloured by meaning.",
+      "**Do** keep row hover to a `well` fill and make the whole row the hit target for its detail.",
+      "**Do** keep 150ms ease-out on state changes and drop the dialog motion under `prefers-reduced-motion`."
+    ],
+    "donts": [
+      "**Don't** use pastel stat cards with icon tiles, or pie and donut charts, for summaries; use the statement strip and ranked share bars.",
+      "**Don't** colour an expense row's amount vermilion, or signal direction with colour alone.",
+      "**Don't** paint category names or chip text in the user's category colour; the dot carries it.",
+      "**Don't** use the diagonal hatch anywhere except the currency tab.",
+      "**Don't** put shadows on sheets, cards or rows; only dialogs and the login card float.",
+      "**Don't** use carbon violet decoratively on content sheets; it belongs to the shell, the primary action, focus and the current location.",
+      "**Don't** introduce raw Tailwind palette colours (`bg-blue-500`, `text-gray-600`) in chrome; user and data series colours are the only literal colours.",
+      "**Don't** set the condensed-caps label as a kicker above a heading; it names a field, figure or column."
+    ]
+  }
+}

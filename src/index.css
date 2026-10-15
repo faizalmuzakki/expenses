@@ -1,7 +1,238 @@
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,400..800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
-  @apply bg-gray-50 text-gray-900;
+/* Kwitansi: carbon-copy violet on copy-paper ground. Light/dark follow the system. */
+:root {
+  color-scheme: light;
+  --ground: #f3f3f7;
+  --sheet: #ffffff;
+  --well: #ececf3;
+  --rule: #e1e1ea;
+  --rule-strong: #c9cad8;
+  --ink: #16172b;
+  --ink-2: #464862;
+  --ink-3: #64667f;
+  --carbon: #3b3fb0;
+  --carbon-hover: #30339a;
+  --carbon-soft: #e7e8fb;
+  --carbon-on: #ffffff;
+  --shell: #3b3fb0;
+  --shell-ink: #ffffff;
+  --shell-dim: #cfd1f7;
+  --in: #0b7a4b;
+  --in-soft: #def3e8;
+  --out: #c0321c;
+  --out-soft: #fbe5e0;
+  --warn: #8a5300;
+  --warn-soft: #fcefd5;
+  --hatch: rgba(59, 63, 176, 0.28);
+  --shadow: 0 1px 2px rgba(22, 23, 43, 0.06), 0 8px 24px -12px rgba(22, 23, 43, 0.18);
 }
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --ground: #0f1018;
+    --sheet: #181926;
+    --well: #222335;
+    --rule: #2b2d42;
+    --rule-strong: #3d3f5a;
+    --ink: #ececf5;
+    --ink-2: #b6b8ce;
+    --ink-3: #9092ac;
+    --carbon: #9599ff;
+    --carbon-hover: #aeb1ff;
+    --carbon-soft: #262966;
+    --carbon-on: #0f1018;
+    --shell: #1d1f52;
+    --shell-ink: #ffffff;
+    --shell-dim: #b9bcf2;
+    --in: #4fd69b;
+    --in-soft: #12382a;
+    --out: #ff8a76;
+    --out-soft: #42201b;
+    --warn: #f2b85b;
+    --warn-soft: #3a2a10;
+    --hatch: rgba(149, 153, 255, 0.35);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px -12px rgba(0, 0, 0, 0.6);
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-ground text-ink font-sans antialiased;
+    font-variant-numeric: tabular-nums;
+    caret-color: var(--carbon);
+  }
+  ::selection {
+    background: var(--carbon);
+    color: var(--carbon-on);
+  }
+  :focus-visible {
+    outline: 2px solid var(--carbon);
+    outline-offset: 2px;
+  }
+  * {
+    scrollbar-color: var(--rule-strong) transparent;
+  }
+  h1, h2, h3 {
+    text-wrap: balance;
+  }
+}
+
+@layer components {
+  /* Printed form head: condensed caps, like the field labels on a kwitansi pad. */
+  .form-head {
+    font-size: 0.6875rem;
+    line-height: 1rem;
+    font-weight: 650;
+    font-stretch: 80%;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .sheet {
+    @apply bg-sheet border border-rule rounded-sheet;
+  }
+  .num {
+    font-variant-numeric: tabular-nums lining-nums;
+    white-space: nowrap;
+  }
+
+  /* The signature: a kwitansi amount box. Hatched Rp tab, tabular figure. */
+  .amount-box {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid var(--rule-strong);
+    border-radius: 8px;
+    background: var(--sheet);
+    overflow: hidden;
+    min-width: 0;
+  }
+  .amount-rp {
+    display: flex;
+    align-items: center;
+    padding: 0 0.5rem;
+    font-weight: 700;
+    font-stretch: 80%;
+    font-size: 0.8125rem;
+    color: var(--ink-2);
+    border-right: 1px solid var(--rule-strong);
+    background-image: repeating-linear-gradient(-45deg, var(--hatch) 0 1px, transparent 1px 6px);
+  }
+  .amount-fig {
+    flex: 1;
+    min-width: 0;
+    padding: 0.375rem 0.625rem;
+    text-align: right;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums lining-nums;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg text-sm font-semibold whitespace-nowrap select-none;
+    transition: background-color 150ms ease-out, color 150ms ease-out, border-color 150ms ease-out, transform 150ms ease-out;
+  }
+  .btn:active:not(:disabled) { transform: translateY(1px); }
+  .btn:disabled { @apply opacity-50 cursor-not-allowed; }
+  .btn-primary { @apply btn bg-carbon text-carbon-on hover:bg-carbon-hover; }
+  .btn-in { @apply btn bg-in text-sheet hover:opacity-90; }
+  .btn-out { @apply btn bg-out text-sheet hover:opacity-90; }
+  .btn-quiet { @apply btn border border-rule-strong bg-sheet text-ink hover:bg-well; }
+  .btn-danger-quiet { @apply btn border border-rule-strong bg-sheet text-out hover:bg-out-soft; }
+  .icon-btn {
+    @apply inline-flex items-center justify-center h-9 w-9 rounded-lg text-ink-3 hover:bg-well hover:text-ink;
+    transition: background-color 150ms ease-out, color 150ms ease-out;
+  }
+  .icon-btn:disabled { @apply opacity-50 cursor-not-allowed; }
+
+  .field {
+    @apply w-full h-10 px-3 rounded-lg border border-rule-strong bg-sheet text-ink text-sm placeholder:text-ink-3;
+    transition: border-color 150ms ease-out, box-shadow 150ms ease-out;
+  }
+  textarea.field { @apply h-auto py-2; }
+  .field:focus {
+    outline: none;
+    border-color: var(--carbon);
+    box-shadow: 0 0 0 3px var(--carbon-soft);
+  }
+  .field:disabled { @apply bg-well text-ink-3 cursor-not-allowed; }
+  input[type='color'].field { @apply p-1 cursor-pointer; }
+
+  /* Segmented control: the pressed segment is a sheet lifted off the well. */
+  .seg { @apply inline-flex rounded-lg bg-well p-1 gap-1; }
+  .seg-btn {
+    @apply h-8 px-3 rounded-md text-sm font-semibold text-ink-2 hover:text-ink whitespace-nowrap;
+    transition: background-color 150ms ease-out, color 150ms ease-out;
+  }
+  .seg-btn[aria-pressed='true'] { @apply bg-sheet text-ink; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12); }
+  .seg-btn:disabled { @apply opacity-50 cursor-not-allowed; }
+
+  /* Category chip: ink text, colour carried by the dot so any user colour stays legible. */
+  .chip { @apply inline-flex items-center gap-1.5 h-6 pl-2 pr-2.5 rounded-full bg-well text-ink-2 text-xs font-medium whitespace-nowrap max-w-full; }
+  .chip-dot { @apply h-2 w-2 rounded-full shrink-0; box-shadow: 0 0 0 1px var(--rule-strong); }
+
+  /* Rubber stamp: printed state marks (excluded, receipt, source). */
+  .stamp {
+    @apply inline-flex items-center gap-1 h-5 px-1.5 rounded border text-[10px] font-bold uppercase whitespace-nowrap;
+    font-stretch: 80%;
+    letter-spacing: 0.06em;
+  }
+
+  .scrim {
+    @apply fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4;
+    background: rgba(10, 11, 22, 0.55);
+  }
+  .dialog {
+    @apply bg-sheet w-full rounded-t-xl sm:rounded-xl overflow-y-auto;
+    max-height: 92dvh;
+    box-shadow: var(--shadow);
+    padding-bottom: env(safe-area-inset-bottom);
+    animation: dialog-in 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+@keyframes dialog-in {
+  from { transform: translateY(12px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+@keyframes pulse-line {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialog { animation: none; }
+  .progress-line::after { animation-duration: 3s; }
+}
+
+.progress-line {
+  position: relative;
+  height: 2px;
+  overflow: hidden;
+}
+.progress-line::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: var(--carbon);
+  animation: pulse-line 1.1s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+/* Amount inputs read as a written figure, not a stepper. */
+.amount-box input[type='number'] { -moz-appearance: textfield; appearance: textfield; }
+.amount-box input[type='number']::-webkit-inner-spin-button,
+.amount-box input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
