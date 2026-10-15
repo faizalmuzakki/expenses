@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { localDate } from './dates';
+import { errorText } from './auth';
 import {
     BarChart, Bar, XAxis, YAxis, Tooltip,
     ResponsiveContainer, Legend, CartesianGrid
@@ -105,22 +106,17 @@ export default function InvestmentTracker({ formatCurrency }) {
 
         setSubmittingContribute(true);
         try {
-            const res = await fetch(`${API_URL}/api/investments/contributions`, {
+            await fetch(`${API_URL}/api/investments/contributions`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...contributeForm, amount: parseFloat(contributeForm.amount) })
             });
-            if (!res.ok) {
-                const errorData = await res.json().catch(() => ({}));
-                alert(errorData.error || 'Failed to record contribution');
-                return;
-            }
             setShowContributeForm(false);
             setContributeForm({ type: 'gold', amount: '', date: localDate(), notes: '' });
             fetchData();
         } catch (error) {
             console.error('Error recording contribution:', error);
-            alert('Failed to connect to server. Please try again.');
+            alert(errorText(error));
         } finally {
             setSubmittingContribute(false);
         }

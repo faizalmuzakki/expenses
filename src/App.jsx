@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit2, Check, LogOut, Image, Plane, Loader2, LayoutDashboard, ReceiptText, Tags, TrendingUp, Search, MessageCircle, PenLine, Inbox, Calendar } from 'lucide-react';
 import Login from './Login';
-import { installAuthFetch, withToken } from './auth';
+import { installAuthFetch, withToken, errorText } from './auth';
 import InvestmentTracker from './InvestmentTracker';
 import TravelExpenses from './TravelExpenses';
 import { AmountBox, Terbilang, CategoryChip, SignedAmount, Dialog, Field, Empty, SectionTitle, TabErrorBoundary } from './ui';
@@ -427,7 +427,7 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
         ? `${API_URL}/api/expenses/${editingId}`
         : `${API_URL}/api/expenses`;
 
-      const res = await fetch(url, {
+      await fetch(url, {
         method: editingId ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -437,19 +437,13 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
         })
       });
 
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        alert(errorData.error || `Failed to ${editingId ? 'update' : 'save'} transaction`);
-        return;
-      }
-
       setShowForm(false);
       setEditingId(null);
       setForm({ amount: '', description: '', vendor: '', category_id: '', date: localDate(), type: 'expense' });
       onRefresh();
     } catch (err) {
       console.error('Error submitting transaction:', err);
-      alert('Failed to connect to server. Please try again.');
+      alert(errorText(err));
     } finally {
       setSubmitting(false);
     }
@@ -834,7 +828,7 @@ function CategoryList({ categories, onRefresh }) {
         ? `${API_URL}/api/categories/${editingId}`
         : `${API_URL}/api/categories`;
 
-      const res = await fetch(url, {
+      await fetch(url, {
         method: editingId ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -843,19 +837,13 @@ function CategoryList({ categories, onRefresh }) {
         })
       });
 
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        alert(errorData.error || `Failed to ${editingId ? 'update' : 'save'} category`);
-        return;
-      }
-
       setShowForm(false);
       setEditingId(null);
       setForm({ name: '', icon: '', color: '#4ECDC4', type: 'expense', exclude_from_dashboard: false });
       onRefresh();
     } catch (err) {
       console.error('Error submitting category:', err);
-      alert('Failed to connect to server. Please try again.');
+      alert(errorText(err));
     } finally {
       setSubmitting(false);
     }
@@ -875,10 +863,10 @@ function CategoryList({ categories, onRefresh }) {
 
   const handleDelete = async (id) => {
     if (!confirm('Delete this category?')) return;
-    const res = await fetch(`${API_URL}/api/categories/${id}`, { method: 'DELETE' });
-    if (!res.ok) {
-      const data = await res.json();
-      alert(data.error);
+    try {
+      await fetch(`${API_URL}/api/categories/${id}`, { method: 'DELETE' });
+    } catch (err) {
+      alert(errorText(err));
       return;
     }
     onRefresh();

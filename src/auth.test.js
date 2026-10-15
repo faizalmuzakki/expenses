@@ -11,9 +11,10 @@ globalThis.localStorage = {
 const API = 'https://api.test';
 const seen = [];
 let status = 200;
+let body = '{}';
 globalThis.fetch = async (input, init) => {
   seen.push({ url: input, auth: new Headers(init?.headers).get('Authorization') });
-  return new Response('{}', { status });
+  return new Response(body, { status });
 };
 const onUnauthorized = vi.fn();
 installAuthFetch(API, onUnauthorized);
@@ -21,6 +22,7 @@ installAuthFetch(API, onUnauthorized);
 beforeEach(() => {
   seen.length = 0;
   status = 200;
+  body = '{}';
   localStorage.setItem('expense_auth', JSON.stringify({ authenticated: true, token: 't0k' }));
 });
 
@@ -37,9 +39,20 @@ test('login and third-party calls are left alone', async () => {
 
 test('401 logs out', async () => {
   status = 401;
-  await fetch(`${API}/api/expenses`);
+  await expect(fetch(`${API}/api/expenses`)).rejects.toMatchObject({ status: 401 });
   expect(localStorage.getItem('expense_auth')).toBeNull();
   expect(onUnauthorized).toHaveBeenCalled();
+});
+
+test('API errors reject instead of resolving with the error payload', async () => {
+  status = 500;
+  await expect(fetch(`${API}/api/expenses`)).rejects.toMatchObject({ status: 500, message: 'Request failed (500)' });
+});
+
+test('the server error message is kept', async () => {
+  status = 400;
+  body = JSON.stringify({ error: 'Category in use' });
+  await expect(fetch(`${API}/api/categories/1`, { method: 'DELETE' })).rejects.toThrow('Category in use');
 });
 
 test('receipt image URLs get the token', () => {
