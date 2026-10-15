@@ -133,8 +133,8 @@ function App() {
     : `${fmtDay(dateRange.startDate, { day: 'numeric', month: 'short' })} – ${fmtDay(dateRange.endDate)}`;
 
   return (
-    <div className="min-h-[100dvh] bg-ground pb-20 md:pb-0">
-      <header className="bg-shell text-shell-ink sticky top-0 z-40">
+    <div className="min-h-[100dvh] bg-ground pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
+      <header className="bg-shell text-shell-ink sticky top-0 z-40 pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-8">
           <span className="text-lg font-extrabold tracking-tight whitespace-nowrap">Finance Tracker</span>
           <nav className="hidden md:flex self-stretch gap-1" aria-label="Sections">
@@ -166,7 +166,7 @@ function App() {
       {/* Phone: thumb-reachable tab bar */}
       <nav
         className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-sheet border-t border-rule grid grid-cols-5"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)', paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)' }}
         aria-label="Sections"
       >
         {TABS.map(({ key, label, icon: Icon }) => (
@@ -738,7 +738,7 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
           </div>
           {groups.map(g => (
             <section key={g.date + g.items[0].id} aria-label={fmtDay(g.date)}>
-              <h3 className="sticky top-14 z-[1] bg-well px-4 md:px-5 py-1.5 text-xs font-bold text-ink-2 num border-y border-rule -mt-px">
+              <h3 className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-[1] bg-well px-4 md:px-5 py-1.5 text-xs font-bold text-ink-2 num border-y border-rule -mt-px">
                 {fmtDay(g.date, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
               </h3>
               <ul className="divide-y divide-rule">
