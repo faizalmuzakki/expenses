@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { PlusCircle, Trash2, Edit2, X, Check, TrendingUp, TrendingDown, Wallet, Calendar, Tag, LogOut, ArrowUpCircle, ArrowDownCircle, Image, Eye, BarChart3, Plane, Loader2 } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import Login from './Login';
+import { installAuthFetch, withToken } from './auth';
 import InvestmentTracker from './InvestmentTracker';
 import TravelExpenses from './TravelExpenses';
-import { installAuthFetch, withToken } from './auth';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 installAuthFetch(API_URL);
