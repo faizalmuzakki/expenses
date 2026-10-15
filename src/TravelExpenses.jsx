@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { PlusCircle, Trash2, Edit2, X, Check, Calendar, Search, Plane, RefreshCw, MapPin, Loader2, ArrowRight } from 'lucide-react';
-import { AmountBox, Terbilang, CategoryChip, Dialog, Field, Empty, SectionTitle, formatNumber } from './ui';
+import { AmountBox, Terbilang, CategoryChip, Dialog, Field, Empty, SectionTitle, formatNumber, amountInput } from './ui';
 import { localDate } from './dates';
 import { errorText } from './auth';
 
@@ -469,7 +469,7 @@ function TravelExpenses({ formatCurrency }) {
                   <Field label="Amount *">
                     <div className="amount-box focus-within:border-carbon focus-within:shadow-[0_0_0_3px_var(--carbon-soft)]"><span className="amount-rp">{expenseForm.currency || '—'}</span><input
                       type="number"
-                      step="any"
+                      {...amountInput({ decimals: expenseForm.currency !== 'IDR' })}
                       required
                       disabled={submittingExpense}
                       value={expenseForm.amount}
@@ -526,7 +526,7 @@ function TravelExpenses({ formatCurrency }) {
                     <Field label="Exchange Rate" className="order-1">
                       <input
                         type="number"
-                        step="any"
+                        {...amountInput({ decimals: true })}
                         disabled={submittingExpense}
                         value={expenseForm.exchange_rate}
                         onChange={e => {
@@ -555,7 +555,7 @@ function TravelExpenses({ formatCurrency }) {
                     <Field label="Converted Amount" className="order-3 sm:order-2 col-span-2 sm:col-span-1">
                       <div className="amount-box focus-within:border-carbon focus-within:shadow-[0_0_0_3px_var(--carbon-soft)]"><span className="amount-rp">{expenseForm.converted_currency === 'IDR' ? 'Rp' : (expenseForm.converted_currency || '—')}</span><input
                         type="number"
-                        step="any"
+                        {...amountInput({ decimals: expenseForm.converted_currency !== 'IDR' })}
                         disabled={submittingExpense}
                         value={expenseForm.converted_amount}
                         onChange={e => setExpenseForm(prev => ({ ...prev, converted_amount: e.target.value }))}
