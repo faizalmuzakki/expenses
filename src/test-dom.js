@@ -19,6 +19,7 @@ globalThis.fetch = async (url, init = {}) => {
   calls.push({ method, url: String(url), body: init.body });
   const h = routes[`${method} ${path}`] ?? routes[`${method} ${path.replace(/\/\d+$/, '/:id')}`];
   const r = typeof h === 'function' ? await h(String(url), init) : h;
+  if (init.signal?.aborted) throw new DOMException('Aborted', 'AbortError');
   if (r === undefined) return new Response('{"error":"no route"}', { status: 404 });
   return r instanceof Response ? r : new Response(JSON.stringify(r));
 };

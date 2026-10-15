@@ -46,6 +46,7 @@ function App() {
     endDate: localDate()
   });
   const [allTime, setAllTime] = useState(false);
+  const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryId, setCategoryId] = useState('');
 
@@ -62,18 +63,45 @@ function App() {
     }
   }, []);
 
+  // Search only after typing pauses.
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchData();
-    }
+    const t = setTimeout(() => setSearchQuery(searchInput), 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  // A newer filter change aborts the in-flight load, so a slow stale response never wins.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const ctrl = new AbortController();
+    fetchData(ctrl.signal);
+    return () => ctrl.abort();
   }, [dateRange, allTime, searchQuery, categoryId, isAuthenticated]);
+
+  // Categories don't depend on the filters: load them once, and again on refresh.
+  useEffect(() => {
+    if (isAuthenticated) fetchCategories();
+  }, [isAuthenticated]);
 
   const handleLogout = () => {
     localStorage.removeItem('expense_auth');
     setIsAuthenticated(false);
   };
 
-  async function fetchData() {
+  async function fetchCategories() {
+    try {
+      const res = await fetch(`${API_URL}/api/categories`);
+      setCategories(await res.json());
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  }
+
+  const refresh = () => {
+    fetchData();
+    fetchCategories();
+  };
+
+  async function fetchData(signal) {
     setLoading(true);
     try {
       // "All time" just drops the bounds - the API treats them as optional
@@ -93,16 +121,16 @@ function App() {
       if (searchQuery) statsParams.append('search', searchQuery);
       if (categoryId) statsParams.append('categoryId', categoryId);
 
-      const [expRes, catRes, statsRes] = await Promise.all([
-        fetch(`${API_URL}/api/expenses?${expenseParams.toString()}`),
-        fetch(`${API_URL}/api/categories`),
-        fetch(`${API_URL}/api/stats/summary?${statsParams.toString()}`)
+      const [expRes, statsRes] = await Promise.all([
+        fetch(`${API_URL}/api/expenses?${expenseParams.toString()}`, { signal }),
+        fetch(`${API_URL}/api/stats/summary?${statsParams.toString()}`, { signal })
       ]);
-
-      setExpenses(await expRes.json());
-      setCategories(await catRes.json());
-      setStats(await statsRes.json());
+      const [expData, statsData] = await Promise.all([expRes.json(), statsRes.json()]);
+      if (signal?.aborted) return;
+      setExpenses(expData);
+      setStats(statsData);
     } catch (error) {
+      if (signal?.aborted) return; // superseded by a newer load, which owns `loading`
       console.error('Error fetching data:', error);
     }
     setLoading(false);
@@ -237,8 +265,8 @@ function App() {
                 <input
                   type="search"
                   placeholder="Search descriptions"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
                   className="field pl-9"
                 />
               </label>
@@ -264,13 +292,13 @@ function App() {
                 expenses={expenses}
                 categories={categories}
                 formatCurrency={formatCurrency}
-                onRefresh={fetchData}
+                onRefresh={refresh}
               />
             )}
             {activeTab === 'categories' && (
               <CategoryList
                 categories={categories}
-                onRefresh={fetchData}
+                onRefresh={refresh}
               />
             )}
             {activeTab === 'investments' && (
