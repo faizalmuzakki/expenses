@@ -1,11 +1,29 @@
 import { useState, useEffect } from 'react';
-import { PlusCircle, Trash2, Edit2, X, Check, TrendingUp, TrendingDown, Wallet, Calendar, Tag, LogOut, ArrowUpCircle, ArrowDownCircle, Image, Eye, BarChart3, Plane, Loader2 } from 'lucide-react';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { Plus, Trash2, Edit2, Check, LogOut, Image, Plane, Loader2, LayoutDashboard, ReceiptText, Tags, TrendingUp, Search, MessageCircle, PenLine, Inbox, Calendar } from 'lucide-react';
 import Login from './Login';
 import InvestmentTracker from './InvestmentTracker';
 import TravelExpenses from './TravelExpenses';
+import { AmountBox, Terbilang, CategoryChip, SignedAmount, Dialog, Field, Empty, SectionTitle, TabErrorBoundary } from './ui';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
+
+const TABS = [
+  { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { key: 'transactions', label: 'Transactions', icon: ReceiptText },
+  { key: 'categories', label: 'Categories', icon: Tags },
+  { key: 'investments', label: 'Investments', icon: TrendingUp },
+  { key: 'travel', label: 'Travel', icon: Plane },
+];
+
+// Display-only date formatting for 'YYYY-MM-DD' strings (parsed as local dates).
+const parseDay = (s) => {
+  const [y, m, d] = String(s || '').split('-').map(Number);
+  return y && m && d ? new Date(y, m - 1, d) : null;
+};
+const fmtDay = (s, opts = { day: 'numeric', month: 'short', year: 'numeric' }) => {
+  const d = parseDay(s);
+  return d ? d.toLocaleDateString('en-GB', opts) : s || '';
+};
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -95,107 +113,146 @@ function App() {
     }).format(amount);
   };
 
+  // Keep the current screen on refetch (dimmed) instead of blanking it; skeleton only before the first load.
+  const [loadedOnce, setLoadedOnce] = useState(false);
+  useEffect(() => {
+    if (!loading) setLoadedOnce(true);
+  }, [loading]);
+
   // Show login if not authenticated
   if (!isAuthenticated) {
     return <Login onLogin={() => setIsAuthenticated(true)} />;
   }
 
+  const showFilters = activeTab === 'dashboard' || activeTab === 'transactions';
+  const periodLabel = allTime
+    ? 'All time'
+    : `${fmtDay(dateRange.startDate, { day: 'numeric', month: 'short' })} – ${fmtDay(dateRange.endDate)}`;
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">💰 Finance Tracker</h1>
+    <div className="min-h-[100dvh] bg-ground pb-20 md:pb-0">
+      <header className="bg-shell text-shell-ink sticky top-0 z-40">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-8">
+          <span className="text-lg font-extrabold tracking-tight whitespace-nowrap">Finance Tracker</span>
+          <nav className="hidden md:flex self-stretch gap-1" aria-label="Sections">
+            {TABS.map(({ key, label, icon: Icon }) => (
+              <button
+                key={key}
+                onClick={() => setActiveTab(key)}
+                aria-current={activeTab === key ? 'page' : undefined}
+                className={`relative flex items-center gap-2 px-3 text-sm font-semibold transition-colors ${activeTab === key
+                  ? 'text-shell-ink after:absolute after:inset-x-3 after:bottom-0 after:h-[3px] after:rounded-t after:bg-shell-ink'
+                  : 'text-shell-dim hover:text-shell-ink'}`}
+              >
+                <Icon className="w-4 h-4" />
+                {label}
+              </button>
+            ))}
+          </nav>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 text-gray-500 hover:text-red-600 transition-colors"
+            className="ml-auto flex items-center gap-2 h-9 px-3 -mr-3 rounded-lg text-sm font-semibold text-shell-dim hover:text-shell-ink hover:bg-white/10 transition-colors"
           >
-            <LogOut className="w-5 h-5" />
-            Logout
+            <LogOut className="w-4 h-4" />
+            <span className="hidden sm:inline">Sign out</span>
+            <span className="sr-only sm:hidden">Sign out</span>
           </button>
         </div>
       </header>
 
-      <nav className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex space-x-4 overflow-x-auto">
-            {['dashboard', 'transactions', 'categories', 'investments', 'travel'].map(tab => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-4 py-3 font-medium capitalize transition-colors whitespace-nowrap flex items-center gap-2 ${activeTab === tab
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-500 hover:text-gray-700'
-                  }`}
-              >
-                {tab === 'investments' && <BarChart3 className="w-4 h-4" />}
-                {tab === 'travel' && <Plane className="w-4 h-4" />}
-                {tab}
-              </button>
-            ))}
-          </div>
-        </div>
+      {/* Phone: thumb-reachable tab bar */}
+      <nav
+        className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-sheet border-t border-rule grid grid-cols-5"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        aria-label="Sections"
+      >
+        {TABS.map(({ key, label, icon: Icon }) => (
+          <button
+            key={key}
+            onClick={() => setActiveTab(key)}
+            aria-current={activeTab === key ? 'page' : undefined}
+            className={`relative flex flex-col items-center justify-center gap-1 h-16 text-[11px] font-semibold transition-colors ${activeTab === key ? 'text-carbon' : 'text-ink-3'}`}
+          >
+            {activeTab === key && <span className="absolute top-0 inset-x-4 h-[3px] rounded-b bg-carbon" />}
+            <Icon className="w-5 h-5" strokeWidth={activeTab === key ? 2.25 : 1.75} />
+            {label}
+          </button>
+        ))}
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 py-6">
-        <div className="mb-6 flex flex-wrap gap-4 items-center">
-          <div className="flex flex-wrap items-center gap-2">
-            <Calendar className="w-5 h-5 text-gray-500" />
-            <input
-              type="date"
-              value={dateRange.startDate}
-              disabled={allTime}
-              onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
-              className="border rounded-lg px-3 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-            />
-            <span className="text-gray-500">to</span>
-            <input
-              type="date"
-              value={dateRange.endDate}
-              disabled={allTime}
-              onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
-              className="border rounded-lg px-3 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-            />
-            <button
-              type="button"
-              onClick={() => setAllTime(prev => !prev)}
-              aria-pressed={allTime}
-              title={allTime ? 'Showing all time - click to use the date range' : 'Ignore the date range and show everything'}
-              className={`rounded-lg px-3 py-2 text-sm border transition-colors ${allTime
-                ? 'bg-blue-600 border-blue-600 text-white hover:bg-blue-700'
-                : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'}`}
-            >
-              All time
-            </button>
-          </div>
-          <div className="flex items-center gap-2 ml-auto">
-             <input
-                type="text"
-                placeholder="Search descriptions..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="border rounded-lg px-3 py-2 w-64"
-             />
-             <select
-                 value={categoryId}
-                 onChange={(e) => setCategoryId(e.target.value)}
-                 className="border rounded-lg px-3 py-2 bg-white"
-             >
-                <option value="">All Categories</option>
-                {categories.map(c => (
-                   <option key={c.id} value={c.id}>
-                      {c.name}
-                   </option>
-                ))}
-             </select>
-          </div>
-        </div>
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-5 sm:py-8">
+        <TabErrorBoundary key={activeTab}>
+        {showFilters && (
+          <section className="mb-6" aria-label="Period and filters">
+            <div className="flex items-baseline justify-between gap-3">
+              <h1 className="text-2xl sm:text-[1.75rem] font-extrabold tracking-tight num">{periodLabel}</h1>
+              {loading && loadedOnce && <span className="text-xs font-medium text-ink-3">Updating…</span>}
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2 lg:flex lg:flex-wrap lg:items-end">
+              <Field label="From" className="lg:w-40">
+                <input
+                  type="date"
+                  value={dateRange.startDate}
+                  disabled={allTime}
+                  onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+                  className="field num"
+                />
+              </Field>
+              <Field label="To" className="lg:w-40">
+                <input
+                  type="date"
+                  value={dateRange.endDate}
+                  disabled={allTime}
+                  onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+                  className="field num"
+                />
+              </Field>
+              <button
+                type="button"
+                onClick={() => setAllTime(prev => !prev)}
+                aria-pressed={allTime}
+                title={allTime ? 'Showing all time - click to use the date range' : 'Ignore the date range and show everything'}
+                className={`btn border ${allTime
+                  ? 'bg-carbon-soft border-carbon text-carbon'
+                  : 'bg-sheet border-rule-strong text-ink-2 hover:bg-well'}`}
+              >
+                <Calendar className="w-4 h-4" />
+                All time
+              </button>
+              <select
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                aria-label="Category"
+                className="field lg:w-44"
+              >
+                <option value="">All categories</option>
+                <CategoryOptions categories={categories} />
+              </select>
+              <label className="relative col-span-2 lg:ml-auto lg:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-3 pointer-events-none" />
+                <span className="sr-only">Search descriptions</span>
+                <input
+                  type="search"
+                  placeholder="Search descriptions"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="field pl-9"
+                />
+              </label>
+            </div>
+            <div className={`mt-4 ${loading && loadedOnce ? 'progress-line' : 'h-[2px]'}`} />
+          </section>
+        )}
 
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        {loading && !loadedOnce ? (
+          <div className="space-y-3" aria-busy="true" aria-label="Loading">
+            <div className="grid sm:grid-cols-3 gap-3">
+              {[0, 1, 2].map(i => <div key={i} className="sheet h-28 animate-pulse" />)}
+            </div>
+            <div className="sheet h-64 animate-pulse" />
           </div>
         ) : (
-          <>
+          <div className={`transition-opacity duration-200 ${loading && showFilters ? 'opacity-60' : ''}`}>
             {activeTab === 'dashboard' && (
               <Dashboard stats={stats} formatCurrency={formatCurrency} />
             )}
@@ -219,16 +276,23 @@ function App() {
             {activeTab === 'travel' && (
               <TravelExpenses formatCurrency={formatCurrency} />
             )}
-          </>
+          </div>
         )}
+        </TabErrorBoundary>
       </main>
     </div>
   );
 }
 
-// Categories created by the spreadsheet backfill have a null color, and recharts
-// crashes on a null fill (`fill.includes is not a function`), taking the whole
-// dashboard down. Fall back to a stable palette so uncoloured slices stay distinct.
+// Rendered as a child so a malformed categories payload is caught by TabErrorBoundary.
+const CategoryOptions = ({ categories }) => categories.map(c => (
+  <option key={c.id} value={c.id}>
+    {c.name}
+  </option>
+));
+
+// Categories created by the spreadsheet backfill have a null color. Fall back to
+// a stable palette so uncoloured categories stay distinct.
 const FALLBACK_CATEGORY_COLORS = [
   '#6366F1', '#F59E0B', '#14B8A6', '#EC4899',
   '#8B5CF6', '#0EA5E9', '#84CC16', '#F97316'
@@ -236,6 +300,38 @@ const FALLBACK_CATEGORY_COLORS = [
 
 const categoryColor = (color, index) =>
   color || FALLBACK_CATEGORY_COLORS[index % FALLBACK_CATEGORY_COLORS.length];
+
+// Ranked category list: name, amount, share bar. Replaces the label-less pies.
+function Breakdown({ rows, formatCurrency, emptyText }) {
+  if (rows.length === 0) return <Empty icon={Inbox} title={emptyText} />;
+  const total = rows.reduce((s, r) => s + r.value, 0);
+  const sorted = [...rows].sort((a, b) => b.value - a.value);
+  const max = sorted[0].value;
+  return (
+    <ol className="divide-y divide-rule">
+      {sorted.map(r => {
+        const share = total > 0 ? (r.value / total) * 100 : 0;
+        return (
+          <li key={r.name} className="py-3 first:pt-0 last:pb-0">
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="flex items-center gap-2 min-w-0">
+                <span className="chip-dot" style={{ backgroundColor: r.color }} />
+                <span className="font-medium truncate">{r.name}</span>
+              </span>
+              <span className="flex items-baseline gap-3 shrink-0">
+                <span className="num text-xs text-ink-3 w-10 text-right">{share.toFixed(share < 10 ? 1 : 0)}%</span>
+                <span className="num font-semibold">{formatCurrency(r.value)}</span>
+              </span>
+            </div>
+            <div className="mt-2 h-1.5 rounded-full bg-well overflow-hidden">
+              <div className="h-full rounded-full" style={{ width: `${max > 0 ? (r.value / max) * 100 : 0}%`, backgroundColor: r.color }} />
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
 
 function Dashboard({ stats, formatCurrency }) {
   const expenseData = stats.byCategory
@@ -246,208 +342,48 @@ function Dashboard({ stats, formatCurrency }) {
     .filter(c => c.total > 0 && c.category_type === 'income')
     .map((c, i) => ({ name: c.name, value: c.total, color: categoryColor(c.color, i) }));
 
-  const summaryChartData = [
-    { name: 'Income', value: stats.income || 0, color: '#10B981' },
-    { name: 'Expenses', value: stats.expenses || 0, color: '#EF4444' }
-  ].filter(d => d.value > 0);
+  const income = stats.income || 0;
+  const spent = stats.expenses || 0;
+  const net = stats.net || 0;
+  const spentShare = income > 0 ? (spent / income) * 100 : null;
 
   return (
     <div className="space-y-6">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl shadow-sm p-6 border">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-green-100 rounded-lg">
-              <TrendingUp className="w-6 h-6 text-green-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Income</p>
-              <p className="text-lg md:text-2xl font-bold text-green-600">{formatCurrency(stats.income || 0)}</p>
-            </div>
+      {/* Statement: three kwitansi amount fields */}
+      <section className="grid sm:grid-cols-3 gap-3" aria-label="Summary">
+        <div className="sheet p-4">
+          <p className="form-head mb-2">Money in</p>
+          <AmountBox value={income} tone="in" size="lg" />
+          <p className="text-xs text-ink-3 mt-2 num">{stats.count || 0} transactions in period</p>
+        </div>
+        <div className="sheet p-4">
+          <p className="form-head mb-2">Money out</p>
+          <AmountBox value={spent} tone="out" size="lg" />
+          <p className="text-xs text-ink-3 mt-2 num">
+            {spentShare === null ? 'No income in period' : `${spentShare.toFixed(spentShare < 10 ? 1 : 0)}% of money in`}
+          </p>
+        </div>
+        <div className="sheet p-4">
+          <p className="form-head mb-2">Left over</p>
+          <AmountBox value={Math.abs(net)} sign={net < 0 ? '−' : ''} tone={net < 0 ? 'out' : 'carbon'} size="lg" />
+          <div className="mt-3 h-1.5 rounded-full bg-in-soft overflow-hidden" aria-hidden="true">
+            <div className="h-full bg-out rounded-full" style={{ width: `${Math.min(100, spentShare ?? (spent > 0 ? 100 : 0))}%` }} />
           </div>
+          <p className="text-xs text-ink-3 mt-1.5 num">
+            {spentShare === null ? 'Nothing came in' : `${(100 - Math.min(100, spentShare)).toFixed(spentShare > 90 ? 1 : 0)}% of money in kept`}
+          </p>
         </div>
-        <div className="bg-white rounded-xl shadow-sm p-6 border">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-red-100 rounded-lg">
-              <TrendingDown className="w-6 h-6 text-red-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Expenses</p>
-              <p className="text-lg md:text-2xl font-bold text-red-600">{formatCurrency(stats.expenses || 0)}</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm p-6 border">
-          <div className="flex items-center gap-3">
-            <div className={`p-3 rounded-lg ${(stats.net || 0) >= 0 ? 'bg-blue-100' : 'bg-orange-100'}`}>
-              <Wallet className={`w-6 h-6 ${(stats.net || 0) >= 0 ? 'text-blue-600' : 'text-orange-600'}`} />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Net Balance</p>
-              <p className={`text-lg md:text-2xl font-bold ${(stats.net || 0) >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
-                {formatCurrency(stats.net || 0)}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm p-6 border">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-purple-100 rounded-lg">
-              <Tag className="w-6 h-6 text-purple-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Transactions</p>
-              <p className="text-lg md:text-2xl font-bold">{stats.count || 0}</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      </section>
 
-      {/* Overview Chart */}
-      <div className="bg-white rounded-xl shadow-sm p-6 border">
-        <h3 className="text-lg font-semibold mb-4">Income vs Expenses</h3>
-        {summaryChartData.length > 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie
-                  data={summaryChartData}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                >
-                  {summaryChartData.map((entry, index) => (
-                    <Cell key={index} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value) => formatCurrency(value)} />
-              </PieChart>
-            </ResponsiveContainer>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={summaryChartData}>
-                <XAxis dataKey="name" />
-                <YAxis tickFormatter={(v) => `${(v / 1000000).toFixed(1)}M`} />
-                <Tooltip formatter={(value) => formatCurrency(value)} />
-                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                  {summaryChartData.map((entry, index) => (
-                    <Cell key={index} fill={entry.color} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        ) : (
-          <p className="text-gray-500 text-center py-12">No data for this period</p>
-        )}
-      </div>
-
-      {/* Category Breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Expense Categories */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <ArrowDownCircle className="w-5 h-5 text-red-500" />
-            Expense Breakdown
-          </h3>
-          {expenseData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={expenseData}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                >
-                  {expenseData.map((entry, index) => (
-                    <Cell key={index} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value) => formatCurrency(value)} />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <p className="text-gray-500 text-center py-12">No expense data</p>
-          )}
-        </div>
-
-        {/* Income Categories */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <ArrowUpCircle className="w-5 h-5 text-green-500" />
-            Income Breakdown
-          </h3>
-          {incomeData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={incomeData}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                >
-                  {incomeData.map((entry, index) => (
-                    <Cell key={index} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value) => formatCurrency(value)} />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <p className="text-gray-500 text-center py-12">No income data</p>
-          )}
-        </div>
-      </div>
-
-      {/* Category Bar Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl shadow-sm p-6 border">
-          <h3 className="text-lg font-semibold mb-4">Top Expense Categories</h3>
-          {expenseData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={expenseData.slice(0, 5)} layout="vertical">
-                <XAxis type="number" tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                <YAxis type="category" dataKey="name" width={80} />
-                <Tooltip formatter={(value) => formatCurrency(value)} />
-                <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                  {expenseData.slice(0, 5).map((entry, index) => (
-                    <Cell key={index} fill={entry.color} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <p className="text-gray-500 text-center py-12">No expense data</p>
-          )}
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm p-6 border">
-          <h3 className="text-lg font-semibold mb-4">Top Income Sources</h3>
-          {incomeData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={incomeData.slice(0, 5)} layout="vertical">
-                <XAxis type="number" tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                <YAxis type="category" dataKey="name" width={80} />
-                <Tooltip formatter={(value) => formatCurrency(value)} />
-                <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                  {incomeData.slice(0, 5).map((entry, index) => (
-                    <Cell key={index} fill={entry.color} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <p className="text-gray-500 text-center py-12">No income data</p>
-          )}
-        </div>
+      <div className="grid lg:grid-cols-2 gap-4">
+        <section className="sheet p-4 sm:p-5">
+          <SectionTitle>Where it went</SectionTitle>
+          <Breakdown rows={expenseData} formatCurrency={formatCurrency} emptyText="No spending in this period" />
+        </section>
+        <section className="sheet p-4 sm:p-5">
+          <SectionTitle>Where it came from</SectionTitle>
+          <Breakdown rows={incomeData} formatCurrency={formatCurrency} emptyText="No income in this period" />
+        </section>
       </div>
     </div>
   );
@@ -547,424 +483,324 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
     setSelectedTransaction(transaction);
   };
 
+  const closeForm = () => { if (!submitting) { setShowForm(false); setEditingId(null); } };
+
+  // Group consecutive rows by date (API order preserved) so each date is a guide line.
+  const groups = [];
+  filteredTransactions.forEach(t => {
+    const last = groups[groups.length - 1];
+    if (last && last.date === t.date) last.items.push(t);
+    else groups.push({ date: t.date, items: [t] });
+  });
+
+  const SOURCE = {
+    whatsapp: { icon: MessageCircle, label: 'WhatsApp' },
+    whatsapp_image: { icon: Image, label: 'WhatsApp photo' },
+    manual: { icon: PenLine, label: 'Manual' },
+  };
+  const sourceOf = (t) => SOURCE[t.source] || { icon: PenLine, label: t.source?.replace('_', ' ') || 'Manual' };
+
   return (
     <div className="space-y-4">
-      {/* Transaction Detail Modal */}
-      {selectedTransaction && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedTransaction(null)}>
-          <div
-            className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-            onClick={e => e.stopPropagation()}
+      {/* Transaction Detail */}
+      {selectedTransaction && (() => {
+        const t = selectedTransaction;
+        const isIn = t.type === 'income';
+        const src = sourceOf(t);
+        return (
+          <Dialog
+            title={t.description || (isIn ? 'Income' : 'Expense')}
+            tone={isIn ? 'in' : 'out'}
+            onClose={() => setSelectedTransaction(null)}
+            footer={<>
+              <button onClick={(e) => handleEdit(t, e)} className="btn-primary flex-1">
+                <Edit2 className="w-4 h-4" /> Edit
+              </button>
+              <button onClick={(e) => handleDelete(t.id, e)} className="btn-danger-quiet">
+                <Trash2 className="w-4 h-4" /> Delete
+              </button>
+            </>}
           >
-            {/* Modal Header */}
-            <div className={`p-6 border-b ${selectedTransaction.type === 'income' ? 'bg-green-50' : 'bg-red-50'}`}>
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-3">
-                  {selectedTransaction.type === 'income' ? (
-                    <div className="p-3 bg-green-100 rounded-xl">
-                      <ArrowUpCircle className="w-8 h-8 text-green-600" />
-                    </div>
-                  ) : (
-                    <div className="p-3 bg-red-100 rounded-xl">
-                      <ArrowDownCircle className="w-8 h-8 text-red-600" />
-                    </div>
-                  )}
-                  <div>
-                    <p className={`text-xl sm:text-3xl font-bold ${selectedTransaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
-                      {selectedTransaction.type === 'income' ? '+' : '-'}{formatCurrency(selectedTransaction.amount)}
-                    </p>
-                    <p className="text-sm text-gray-500 capitalize">{selectedTransaction.type}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setSelectedTransaction(null)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <X className="w-5 h-5 text-gray-500" />
-                </button>
-              </div>
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <span className={`stamp ${isIn ? 'text-in border-in' : 'text-out border-out'}`}>{isIn ? 'Income' : 'Expense'}</span>
+              <span className="text-sm text-ink-3 num">{fmtDay(t.date, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
             </div>
+            <AmountBox value={t.amount} sign={isIn ? '+' : '−'} tone={isIn ? 'in' : 'ink'} size="lg" />
+            <Terbilang value={t.amount} className="mt-1.5" />
 
-            {/* Modal Body */}
-            <div className="p-6 space-y-4">
-              {/* Receipt Image */}
-              {selectedTransaction.image_url && (
-                <div className="mb-6">
-                  <h4 className="text-sm font-medium text-gray-500 mb-2 flex items-center gap-2">
-                    <Image className="w-4 h-4" />
-                    Receipt Image
-                  </h4>
-                  <div className="border rounded-xl overflow-hidden bg-gray-50">
-                    <img
-                      src={`${API_URL}${selectedTransaction.image_url}`}
-                      alt="Receipt"
-                      className="w-full max-h-96 object-contain"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Details Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <p className="text-sm text-gray-500 mb-1">Date</p>
-                  <p className="font-medium flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-gray-400" />
-                    {selectedTransaction.date}
-                  </p>
-                </div>
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <p className="text-sm text-gray-500 mb-1">Category</p>
-                  {selectedTransaction.category_name ? (
-                    <span
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm font-medium"
-                      style={{ backgroundColor: selectedTransaction.category_color + '20', color: selectedTransaction.category_color }}
-                    >
-                      {selectedTransaction.category_icon} {selectedTransaction.category_name}
-                    </span>
-                  ) : (
-                    <p className="text-gray-400">Uncategorized</p>
-                  )}
-                </div>
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <p className="text-sm text-gray-500 mb-1">Description</p>
-                  <p className="font-medium">{selectedTransaction.description || '-'}</p>
-                </div>
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <p className="text-sm text-gray-500 mb-1">{selectedTransaction.type === 'income' ? 'Source' : 'Vendor'}</p>
-                  <p className="font-medium">{selectedTransaction.vendor || '-'}</p>
-                </div>
+            <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-4 text-sm">
+              <div className="min-w-0">
+                <dt className="form-head mb-1">Category</dt>
+                <dd><CategoryChip name={t.category_name} icon={t.category_icon} color={t.category_color} /></dd>
               </div>
-
-              {/* Source info */}
-              <div className="bg-gray-50 rounded-xl p-4">
-                <p className="text-sm text-gray-500 mb-1">Entry Source</p>
-                <p className="font-medium capitalize flex items-center gap-2">
-                  {selectedTransaction.source === 'whatsapp_image' && <Image className="w-4 h-4 text-green-600" />}
-                  {selectedTransaction.source === 'whatsapp' && '💬'}
-                  {selectedTransaction.source === 'manual' && '✏️'}
-                  {selectedTransaction.source?.replace('_', ' ') || 'Manual'}
-                </p>
+              <div className="min-w-0">
+                <dt className="form-head mb-1">{isIn ? 'Source' : 'Vendor'}</dt>
+                <dd className="font-medium break-words">{t.vendor || '—'}</dd>
               </div>
+              <div className="min-w-0">
+                <dt className="form-head mb-1">Entered via</dt>
+                <dd className="font-medium flex items-center gap-1.5 capitalize"><src.icon className="w-4 h-4 text-ink-3" />{src.label}</dd>
+              </div>
+              <div className="min-w-0">
+                <dt className="form-head mb-1">Date</dt>
+                <dd className="font-medium num">{t.date}</dd>
+              </div>
+            </dl>
 
-              {/* Raw text if available */}
-              {selectedTransaction.raw_text && (
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <p className="text-sm text-gray-500 mb-1">Original Message</p>
-                  <p className="text-sm text-gray-600 italic">"{selectedTransaction.raw_text}"</p>
+            {t.raw_text && (
+              <figure className="mt-5">
+                <figcaption className="form-head mb-1">Original message</figcaption>
+                <blockquote className="text-sm text-ink-2 bg-well rounded-lg px-3 py-2.5 break-words">{t.raw_text}</blockquote>
+              </figure>
+            )}
+
+            {t.image_url && (
+              <figure className="mt-5">
+                <figcaption className="form-head mb-1">Receipt</figcaption>
+                <div className="rounded-lg border border-rule overflow-hidden bg-well">
+                  <img
+                    src={`${API_URL}${t.image_url}`}
+                    alt="Receipt"
+                    className="w-full max-h-96 object-contain"
+                  />
                 </div>
-              )}
+              </figure>
+            )}
 
-              {/* Timestamps */}
-              <div className="text-xs text-gray-400 pt-4 border-t">
-                <p>Created: {new Date(selectedTransaction.created_at).toLocaleString()}</p>
-                {selectedTransaction.updated_at !== selectedTransaction.created_at && (
-                  <p>Updated: {new Date(selectedTransaction.updated_at).toLocaleString()}</p>
-                )}
-              </div>
-            </div>
+            <p className="mt-5 pt-4 border-t border-rule text-xs text-ink-3 num">
+              Created {new Date(t.created_at).toLocaleString()}
+              {t.updated_at !== t.created_at && <> · Updated {new Date(t.updated_at).toLocaleString()}</>}
+            </p>
+          </Dialog>
+        );
+      })()}
 
-            {/* Modal Footer */}
-            <div className="p-6 border-t bg-gray-50 flex gap-2 justify-end">
-              <button
-                onClick={(e) => handleEdit(selectedTransaction, e)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Edit2 className="w-4 h-4" />
-                Edit
-              </button>
-              <button
-                onClick={(e) => handleDelete(selectedTransaction.id, e)}
-                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      <div className="flex justify-between items-center flex-wrap gap-4">
-        <div className="flex items-center gap-2 flex-wrap">
-          <h2 className="text-xl font-semibold">Transactions</h2>
-          {/* Type Filter */}
-          <div className="flex bg-gray-100 rounded-lg p-1">
-            {['all', 'expense', 'income'].map(type => (
-              <button
-                key={type}
-                onClick={() => setTypeFilter(type)}
-                className={`px-3 py-1 rounded-md text-sm font-medium capitalize transition-colors ${typeFilter === type
-                  ? type === 'income'
-                    ? 'bg-green-500 text-white'
-                    : type === 'expense'
-                      ? 'bg-red-500 text-white'
-                      : 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-                  }`}
-              >
-                {type}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="flex gap-2 flex-wrap">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <h2 className="text-lg font-bold flex items-baseline gap-2">
+          Transactions <span className="text-sm font-medium text-ink-3 num">{filteredTransactions.length}</span>
+        </h2>
+        <div className="flex gap-2 sm:order-3">
           <button
             onClick={() => { setShowForm(true); setEditingId(null); setForm(prev => ({ ...prev, type: 'income' })); }}
-            className="flex items-center gap-2 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm"
+            className="btn-in px-3"
           >
-            <ArrowUpCircle className="w-4 h-4" />
-            <span className="hidden sm:inline">Add</span> Income
+            <Plus className="w-4 h-4" />
+            <span><span className="hidden sm:inline">Add </span>income</span>
           </button>
           <button
             onClick={() => { setShowForm(true); setEditingId(null); setForm(prev => ({ ...prev, type: 'expense' })); }}
-            className="flex items-center gap-2 bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm"
+            className="btn-out px-3"
           >
-            <ArrowDownCircle className="w-4 h-4" />
-            <span className="hidden sm:inline">Add</span> Expense
+            <Plus className="w-4 h-4" />
+            <span><span className="hidden sm:inline">Add </span>expense</span>
           </button>
+        </div>
+        <div className="seg w-full sm:w-auto sm:order-2 sm:mr-auto" role="group" aria-label="Filter by type">
+          {['all', 'expense', 'income'].map(type => (
+            <button
+              key={type}
+              onClick={() => setTypeFilter(type)}
+              aria-pressed={typeFilter === type}
+              className="seg-btn flex-1 sm:flex-none capitalize"
+            >
+              {type}
+            </button>
+          ))}
         </div>
       </div>
 
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => { if (!submitting) { setShowForm(false); setEditingId(null); } }}>
-          <div
-            className="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
-            onClick={e => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className={`p-6 border-b ${form.type === 'income' ? 'bg-green-50' : 'bg-red-50'}`}>
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  {form.type === 'income' ? (
-                    <ArrowUpCircle className="w-6 h-6 text-green-600" />
-                  ) : (
-                    <ArrowDownCircle className="w-6 h-6 text-red-600" />
-                  )}
-                  <h3 className="text-lg font-semibold">
-                    {editingId ? 'Edit' : 'Add'} {form.type === 'income' ? 'Income' : 'Expense'}
-                  </h3>
-                </div>
-                <button
-                  disabled={submitting}
-                  onClick={() => { if (!submitting) { setShowForm(false); setEditingId(null); } }}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <X className="w-5 h-5 text-gray-500" />
-                </button>
-              </div>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-6">
-              {/* Type Toggle */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
-                <div className="flex bg-gray-100 rounded-lg p-1 w-fit">
-                  <button
-                    type="button"
-                    disabled={submitting}
-                    onClick={() => handleTypeChange('expense')}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 ${form.type === 'expense'
-                      ? 'bg-red-500 text-white'
-                      : 'text-gray-600 hover:text-gray-900'
-                      }`}
-                  >
-                    Expense
-                  </button>
-                  <button
-                    type="button"
-                    disabled={submitting}
-                    onClick={() => handleTypeChange('income')}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 ${form.type === 'income'
-                      ? 'bg-green-500 text-white'
-                      : 'text-gray-600 hover:text-gray-900'
-                      }`}
-                  >
-                    Income
-                  </button>
-                </div>
-              </div>
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Amount *</label>
-                    <input
-                      type="number"
-                      required
-                      disabled={submitting}
-                      value={form.amount}
-                      onChange={(e) => setForm(prev => ({ ...prev, amount: e.target.value }))}
-                      className="w-full border rounded-lg px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                      placeholder="50000"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
-                    <input
-                      type="date"
-                      required
-                      disabled={submitting}
-                      value={form.date}
-                      onChange={(e) => setForm(prev => ({ ...prev, date: e.target.value }))}
-                      className="w-full border rounded-lg px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                    <input
-                      type="text"
-                      disabled={submitting}
-                      value={form.description}
-                      onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
-                      className="w-full border rounded-lg px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                      placeholder={form.type === 'income' ? 'Salary payment' : 'Lunch'}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      {form.type === 'income' ? 'Source' : 'Vendor'}
-                    </label>
-                    <input
-                      type="text"
-                      disabled={submitting}
-                      value={form.vendor}
-                      onChange={(e) => setForm(prev => ({ ...prev, vendor: e.target.value }))}
-                      className="w-full border rounded-lg px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                      placeholder={form.type === 'income' ? 'Company name' : 'Restaurant name'}
-                    />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                    <select
-                      disabled={submitting}
-                      value={form.category_id}
-                      onChange={(e) => setForm(prev => ({ ...prev, category_id: e.target.value }))}
-                      className="w-full border rounded-lg px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                    >
-                      <option value="">Select category</option>
-                      {filteredCategories.map(cat => (
-                        <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div className="flex gap-2 pt-2">
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className={`flex-1 flex items-center justify-center gap-2 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${form.type === 'income'
-                      ? 'bg-green-600 hover:bg-green-700'
-                      : 'bg-red-600 hover:bg-red-700'
-                      }`}
-                  >
-                    {submitting ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    ) : (
-                      <Check className="w-5 h-5" />
-                    )}
-                    {submitting ? (editingId ? 'Updating...' : 'Saving...') : (editingId ? 'Update' : 'Save')}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={submitting}
-                    onClick={() => { if (!submitting) { setShowForm(false); setEditingId(null); } }}
-                    className="px-4 py-2 border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
+        <Dialog
+          title={`${editingId ? 'Edit' : 'Add'} ${form.type === 'income' ? 'income' : 'expense'}`}
+          tone={form.type === 'income' ? 'in' : 'out'}
+          onClose={closeForm}
+          footer={<>
+            <button
+              type="submit"
+              form="tx-form"
+              disabled={submitting}
+              className={`${form.type === 'income' ? 'btn-in' : 'btn-out'} flex-1`}
+            >
+              {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+              {submitting ? (editingId ? 'Updating…' : 'Saving…') : (editingId ? 'Update' : 'Save')}
+            </button>
+            <button type="button" disabled={submitting} onClick={closeForm} className="btn-quiet">
+              Cancel
+            </button>
+          </>}
+        >
+          <div className="seg w-full mb-5" role="group" aria-label="Type">
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={() => handleTypeChange('expense')}
+              aria-pressed={form.type === 'expense'}
+              className="seg-btn flex-1"
+            >
+              Expense
+            </button>
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={() => handleTypeChange('income')}
+              aria-pressed={form.type === 'income'}
+              className="seg-btn flex-1"
+            >
+              Income
+            </button>
           </div>
-        </div>
+
+          <form id="tx-form" onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Field label="Amount (Rp) *">
+                <div className="amount-box focus-within:border-carbon focus-within:shadow-[0_0_0_3px_var(--carbon-soft)]">
+                  <span className="amount-rp">Rp</span>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    required
+                    disabled={submitting}
+                    value={form.amount}
+                    onChange={(e) => setForm(prev => ({ ...prev, amount: e.target.value }))}
+                    className="amount-fig text-xl bg-transparent outline-none disabled:cursor-not-allowed"
+                    placeholder="50000"
+                  />
+                </div>
+              </Field>
+              <Terbilang value={form.amount} className="mt-1.5" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label="Date *">
+                <input
+                  type="date"
+                  required
+                  disabled={submitting}
+                  value={form.date}
+                  onChange={(e) => setForm(prev => ({ ...prev, date: e.target.value }))}
+                  className="field num"
+                />
+              </Field>
+              <Field label="Category">
+                <select
+                  disabled={submitting}
+                  value={form.category_id}
+                  onChange={(e) => setForm(prev => ({ ...prev, category_id: e.target.value }))}
+                  className="field"
+                >
+                  <option value="">Select category</option>
+                  {filteredCategories.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Description">
+                <input
+                  type="text"
+                  disabled={submitting}
+                  value={form.description}
+                  onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
+                  className="field"
+                  placeholder={form.type === 'income' ? 'Salary payment' : 'Lunch'}
+                />
+              </Field>
+              <Field label={form.type === 'income' ? 'Source' : 'Vendor'}>
+                <input
+                  type="text"
+                  disabled={submitting}
+                  value={form.vendor}
+                  onChange={(e) => setForm(prev => ({ ...prev, vendor: e.target.value }))}
+                  className="field"
+                  placeholder={form.type === 'income' ? 'Company name' : 'Restaurant name'}
+                />
+              </Field>
+            </div>
+          </form>
+        </Dialog>
       )}
 
-      <div className="bg-white rounded-xl shadow-sm border overflow-hidden overflow-x-auto">
-        <table className="w-full min-w-[640px]">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Date</th>
-              <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Type</th>
-              <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Description</th>
-              <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Category</th>
-              <th className="text-right px-4 py-3 text-sm font-medium text-gray-500">Amount</th>
-              <th className="text-right px-4 py-3 text-sm font-medium text-gray-500">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {filteredTransactions.length === 0 ? (
-              <tr>
-                <td colSpan="6" className="text-center py-8 text-gray-500">
-                  No transactions found
-                </td>
-              </tr>
-            ) : (
-              filteredTransactions.map(transaction => (
-                <tr
-                  key={transaction.id}
-                  className="hover:bg-gray-50 cursor-pointer transition-colors"
-                  onClick={() => handleRowClick(transaction)}
-                >
-                  <td className="px-4 py-3 text-sm">{transaction.date}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-1">
-                      {transaction.type === 'income' ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                          <ArrowUpCircle className="w-3 h-3" />
-                          Income
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
-                          <ArrowDownCircle className="w-3 h-3" />
-                          Expense
-                        </span>
-                      )}
-                      {transaction.image_url && (
-                        <Image className="w-4 h-4 text-blue-500" title="Has receipt image" />
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="font-medium">{transaction.description || '-'}</div>
-                    {transaction.vendor && (
-                      <div className="text-sm text-gray-500">{transaction.vendor}</div>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    {transaction.category_name ? (
-                      <span
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm"
-                        style={{ backgroundColor: transaction.category_color + '20', color: transaction.category_color }}
-                      >
-                        {transaction.category_icon} {transaction.category_name}
-                      </span>
-                    ) : '-'}
-                  </td>
-                  <td className={`px-4 py-3 text-right font-medium ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                    {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={(e) => handleEdit(transaction, e)}
-                      className="p-1 text-gray-500 hover:text-blue-600"
+      {groups.length === 0 ? (
+        <div className="sheet">
+          <Empty icon={ReceiptText} title="No transactions here">
+            Widen the dates, clear the search, or add one with the buttons above.
+          </Empty>
+        </div>
+      ) : (
+        <div className="sheet overflow-clip">
+          <div className="hidden md:grid grid-cols-[minmax(0,1fr)_12rem_10rem_11rem_5.5rem] gap-4 px-5 py-2.5 bg-well border-b border-rule form-head">
+            <span>Description</span>
+            <span>Category</span>
+            <span>Entered via</span>
+            <span className="text-right">Amount</span>
+            <span className="sr-only">Actions</span>
+          </div>
+          {groups.map(g => (
+            <section key={g.date + g.items[0].id} aria-label={fmtDay(g.date)}>
+              <h3 className="sticky top-14 z-[1] bg-well px-4 md:px-5 py-1.5 text-xs font-bold text-ink-2 num border-y border-rule -mt-px">
+                {fmtDay(g.date, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+              </h3>
+              <ul className="divide-y divide-rule">
+                {g.items.map(transaction => {
+                  const src = sourceOf(transaction);
+                  return (
+                    <li
+                      key={transaction.id}
+                      className="relative group hover:bg-well transition-colors px-4 md:px-5 py-3 flex items-start gap-3 md:grid md:grid-cols-[minmax(0,1fr)_12rem_10rem_11rem_5.5rem] md:gap-4 md:items-center"
                     >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={(e) => handleDelete(transaction.id, e)}
-                      className="p-1 text-gray-500 hover:text-red-600 ml-2"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+                      <div className="min-w-0 flex-1">
+                        <button
+                          type="button"
+                          onClick={() => handleRowClick(transaction)}
+                          className="text-left font-semibold text-ink truncate max-w-full block after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-carbon focus-visible:after:-outline-offset-2"
+                        >
+                          {transaction.description || (transaction.type === 'income' ? 'Income' : 'Expense')}
+                        </button>
+                        <div className="mt-0.5 flex items-center gap-2 text-sm text-ink-3 min-w-0">
+                          {transaction.vendor && <span className="truncate">{transaction.vendor}</span>}
+                          <span className="md:hidden flex items-center gap-1 min-w-0">
+                            {transaction.vendor && <span aria-hidden="true">·</span>}
+                            <span className="chip-dot" style={{ backgroundColor: transaction.category_color || 'var(--ink-3)' }} />
+                            <span className="truncate">{transaction.category_name || 'Uncategorized'}</span>
+                          </span>
+                        </div>
+                      </div>
+                      <div className="hidden md:block min-w-0">
+                        <CategoryChip name={transaction.category_name} icon={transaction.category_icon} color={transaction.category_color} />
+                      </div>
+                      <div className="hidden md:flex items-center gap-1.5 text-sm text-ink-3 min-w-0">
+                        <src.icon className="w-4 h-4 shrink-0" />
+                        <span className="truncate capitalize">{src.label}</span>
+                        {transaction.image_url && <span className="stamp text-carbon border-carbon ml-1">Receipt</span>}
+                      </div>
+                      <div className="text-right shrink-0">
+                        <SignedAmount type={transaction.type} amount={transaction.amount} formatCurrency={formatCurrency} />
+                        {transaction.image_url && (
+                          <span className="md:hidden flex justify-end mt-1"><span className="stamp text-carbon border-carbon">Receipt</span></span>
+                        )}
+                      </div>
+                      <div className="hidden md:flex justify-end gap-1 relative z-[2]">
+                        <button
+                          onClick={(e) => handleEdit(transaction, e)}
+                          className="icon-btn"
+                          aria-label={`Edit ${transaction.description || 'transaction'}`}
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => handleDelete(transaction.id, e)}
+                          className="icon-btn hover:!text-out"
+                          aria-label={`Delete ${transaction.description || 'transaction'}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -1045,261 +881,210 @@ function CategoryList({ categories, onRefresh }) {
     onRefresh();
   };
 
-  const CategoryCard = ({ category }) => (
-    <div
-      className={`bg-white rounded-xl shadow-sm p-4 border-2 flex items-center justify-between ${category.type === 'income' ? 'border-green-200' : 'border-red-200'
-        }`}
-    >
-      <div className="flex items-center gap-3">
-        <div
-          className="w-10 h-10 rounded-lg flex items-center justify-center text-xl"
-          style={{ backgroundColor: category.color + '20' }}
-        >
-          {category.icon}
-        </div>
-        <div>
-          <span className="font-medium">{category.name}</span>
-          <div className="flex items-center gap-2 mt-0.5">
-            <span className={`text-xs ${category.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
-              {category.type}
-            </span>
-            {Boolean(category.exclude_from_dashboard) && (
-              <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-medium">
-                Excluded from dashboard
-              </span>
-            )}
-          </div>
-        </div>
+  const CategoryRow = ({ category }) => (
+    <li className="flex items-center gap-3 px-4 py-3">
+      <span
+        className="w-10 h-10 rounded-lg flex items-center justify-center text-xl shrink-0 border border-rule"
+        style={{ backgroundColor: category.color ? category.color + '22' : 'var(--well)' }}
+        aria-hidden="true"
+      >
+        {category.icon}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="font-semibold truncate flex items-center gap-2">
+          <span className="chip-dot" style={{ backgroundColor: category.color || 'var(--ink-3)' }} />
+          {category.name}
+        </p>
+        {Boolean(category.exclude_from_dashboard) && (
+          <span className="stamp text-warn border-warn mt-1" title="Not counted in dashboard totals">Excluded from dashboard</span>
+        )}
       </div>
-      <div className="flex gap-1">
+      <div className="flex gap-1 shrink-0">
         <button
           onClick={() => handleEdit(category)}
-          className="p-2 text-gray-500 hover:text-blue-600 rounded-lg hover:bg-gray-100"
+          className="icon-btn"
+          aria-label={`Edit ${category.name}`}
         >
           <Edit2 className="w-4 h-4" />
         </button>
         <button
           onClick={() => handleDelete(category.id)}
-          className="p-2 text-gray-500 hover:text-red-600 rounded-lg hover:bg-gray-100"
+          className="icon-btn hover:!text-out"
+          aria-label={`Delete ${category.name}`}
         >
           <Trash2 className="w-4 h-4" />
         </button>
       </div>
-    </div>
+    </li>
+  );
+
+  const Group = ({ title, items, tone, emptyText }) => (
+    <section>
+      <h3 className="text-base font-bold mb-2 flex items-center gap-2">
+        <span className={`h-2.5 w-2.5 rounded-sm ${tone === 'in' ? 'bg-in' : 'bg-out'}`} />
+        {title} <span className="text-sm font-medium text-ink-3 num">{items.length}</span>
+      </h3>
+      {items.length === 0 ? (
+        <div className="sheet"><Empty icon={Tags} title={emptyText} /></div>
+      ) : (
+        <ul className="sheet divide-y divide-rule">
+          {items.map(category => <CategoryRow key={category.id} category={category} />)}
+        </ul>
+      )}
+    </section>
   );
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center flex-wrap gap-4">
-        <div className="flex items-center gap-2 flex-wrap">
-          <h2 className="text-xl font-semibold">Categories</h2>
-          {/* Type Filter */}
-          <div className="flex bg-gray-100 rounded-lg p-1">
-            {['all', 'expense', 'income'].map(type => (
-              <button
-                key={type}
-                onClick={() => setTypeFilter(type)}
-                className={`px-3 py-1 rounded-md text-sm font-medium capitalize transition-colors ${typeFilter === type
-                  ? type === 'income'
-                    ? 'bg-green-500 text-white'
-                    : type === 'expense'
-                      ? 'bg-red-500 text-white'
-                      : 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-                  }`}
-              >
-                {type}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="flex gap-2 flex-wrap">
+    <div className="space-y-5">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <h2 className="text-lg font-bold">Categories</h2>
+        <div className="flex gap-2 sm:order-3">
           <button
             onClick={() => { setShowForm(true); setEditingId(null); setForm(prev => ({ ...prev, type: 'income', color: '#10B981', exclude_from_dashboard: false })); }}
-            className="flex items-center gap-2 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm"
+            className="btn-in px-3"
           >
-            <PlusCircle className="w-4 h-4" />
-            <span className="hidden sm:inline">Add</span> Income <span className="hidden sm:inline">Category</span>
+            <Plus className="w-4 h-4" />
+            <span>Income<span className="hidden sm:inline"> category</span></span>
           </button>
           <button
             onClick={() => { setShowForm(true); setEditingId(null); setForm(prev => ({ ...prev, type: 'expense', color: '#EF4444', exclude_from_dashboard: false })); }}
-            className="flex items-center gap-2 bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm"
+            className="btn-out px-3"
           >
-            <PlusCircle className="w-4 h-4" />
-            <span className="hidden sm:inline">Add</span> Expense <span className="hidden sm:inline">Category</span>
+            <Plus className="w-4 h-4" />
+            <span>Expense<span className="hidden sm:inline"> category</span></span>
           </button>
+        </div>
+        <div className="seg w-full sm:w-auto sm:order-2 sm:mr-auto" role="group" aria-label="Filter by type">
+          {['all', 'expense', 'income'].map(type => (
+            <button
+              key={type}
+              onClick={() => setTypeFilter(type)}
+              aria-pressed={typeFilter === type}
+              className="seg-btn flex-1 sm:flex-none capitalize"
+            >
+              {type}
+            </button>
+          ))}
         </div>
       </div>
 
       {showForm && (
-        <div className={`rounded-xl shadow-sm p-6 border-2 ${form.type === 'income' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-          <div className="flex items-center gap-2 mb-4">
-            {form.type === 'income' ? (
-              <ArrowUpCircle className="w-6 h-6 text-green-600" />
-            ) : (
-              <ArrowDownCircle className="w-6 h-6 text-red-600" />
-            )}
-            <h3 className="text-lg font-semibold">
-              {editingId ? 'Edit' : 'Add'} {form.type === 'income' ? 'Income' : 'Expense'} Category
-            </h3>
-          </div>
-
-          {/* Type Toggle */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
-            <div className="flex bg-white rounded-lg p-1 w-fit border">
-              <button
-                type="button"
-                onClick={() => setForm(prev => ({ ...prev, type: 'expense', color: '#EF4444' }))}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${form.type === 'expense'
-                  ? 'bg-red-500 text-white'
-                  : 'text-gray-600 hover:text-gray-900'
-                  }`}
-              >
-                Expense
-              </button>
-              <button
-                type="button"
-                onClick={() => setForm(prev => ({ ...prev, type: 'income', color: '#10B981' }))}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${form.type === 'income'
-                  ? 'bg-green-500 text-white'
-                  : 'text-gray-600 hover:text-gray-900'
-                  }`}
-              >
-                Income
-              </button>
-            </div>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
-                <input
-                  type="text"
-                  required
-                  disabled={submitting}
-                  value={form.name}
-                  onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full border rounded-lg px-3 py-2 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  placeholder="Category name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Icon (emoji)</label>
-                <input
-                  type="text"
-                  disabled={submitting}
-                  value={form.icon}
-                  onChange={(e) => setForm(prev => ({ ...prev, icon: e.target.value }))}
-                  className="w-full border rounded-lg px-3 py-2 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  placeholder={form.type === 'income' ? '💰' : '🍔'}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Color</label>
-                <input
-                  type="color"
-                  disabled={submitting}
-                  value={form.color}
-                  onChange={(e) => setForm(prev => ({ ...prev, color: e.target.value }))}
-                  className="w-full h-10 border rounded-lg cursor-pointer bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
-                />
+        <section className="sheet overflow-hidden" aria-label="Category form">
+          <div className={`h-1 ${form.type === 'income' ? 'bg-in' : 'bg-out'}`} />
+          <div className="p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
+              <h3 className="text-base font-bold">
+                {editingId ? 'Edit' : 'Add'} {form.type === 'income' ? 'income' : 'expense'} category
+              </h3>
+              <div className="seg" role="group" aria-label="Type">
+                <button
+                  type="button"
+                  onClick={() => setForm(prev => ({ ...prev, type: 'expense', color: '#EF4444' }))}
+                  aria-pressed={form.type === 'expense'}
+                  className="seg-btn"
+                >
+                  Expense
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setForm(prev => ({ ...prev, type: 'income', color: '#10B981' }))}
+                  aria-pressed={form.type === 'income'}
+                  className="seg-btn"
+                >
+                  Income
+                </button>
               </div>
             </div>
 
-            {/* Exclude from dashboard calculations toggle */}
-            <div className="flex items-start gap-3 p-3 bg-white rounded-lg border">
-              <input
-                type="checkbox"
-                id="exclude_from_dashboard"
-                disabled={submitting}
-                checked={form.exclude_from_dashboard}
-                onChange={(e) => setForm(prev => ({ ...prev, exclude_from_dashboard: e.target.checked }))}
-                className="mt-0.5 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer disabled:cursor-not-allowed"
-              />
-              <label htmlFor="exclude_from_dashboard" className="text-sm text-gray-700 cursor-pointer select-none">
-                <span className="font-medium">Exclude from dashboard calculations</span>
-                <span className="block text-xs text-gray-500">
-                  Transactions in this category will not be included in dashboard totals, net balance, or charts.
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-[minmax(0,1fr)_5rem_4.5rem] sm:grid-cols-[minmax(0,1fr)_7rem_6rem] gap-3">
+                <Field label="Name *">
+                  <input
+                    type="text"
+                    required
+                    disabled={submitting}
+                    value={form.name}
+                    onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
+                    className="field"
+                    placeholder="Category name"
+                  />
+                </Field>
+                <Field label="Icon">
+                  <input
+                    type="text"
+                    disabled={submitting}
+                    value={form.icon}
+                    onChange={(e) => setForm(prev => ({ ...prev, icon: e.target.value }))}
+                    className="field text-center text-lg"
+                    placeholder={form.type === 'income' ? '💰' : '🍔'}
+                    aria-label="Icon (emoji)"
+                  />
+                </Field>
+                <Field label="Colour">
+                  <input
+                    type="color"
+                    disabled={submitting}
+                    value={form.color}
+                    onChange={(e) => setForm(prev => ({ ...prev, color: e.target.value }))}
+                    className="field"
+                  />
+                </Field>
+              </div>
+
+              {/* Exclude from dashboard calculations toggle */}
+              <label htmlFor="exclude_from_dashboard" className="flex items-start gap-3 p-3 rounded-lg bg-well cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  id="exclude_from_dashboard"
+                  disabled={submitting}
+                  checked={form.exclude_from_dashboard}
+                  onChange={(e) => setForm(prev => ({ ...prev, exclude_from_dashboard: e.target.checked }))}
+                  className="mt-0.5 w-4 h-4 shrink-0 cursor-pointer disabled:cursor-not-allowed"
+                  style={{ accentColor: 'var(--carbon)' }}
+                />
+                <span className="text-sm">
+                  <span className="font-semibold text-ink">Exclude from dashboard calculations</span>
+                  <span className="block text-ink-3 mt-0.5">
+                    Transactions in this category will not be included in dashboard totals, net balance, or charts.
+                  </span>
                 </span>
               </label>
-            </div>
 
-            <div className="flex gap-2">
-              <button
-                type="submit"
-                disabled={submitting}
-                className={`flex items-center gap-2 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${form.type === 'income'
-                  ? 'bg-green-600 hover:bg-green-700'
-                  : 'bg-red-600 hover:bg-red-700'
-                  }`}
-              >
-                {submitting ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <Check className="w-5 h-5" />
-                )}
-                {submitting ? (editingId ? 'Updating...' : 'Saving...') : (editingId ? 'Update' : 'Save')}
-              </button>
-              <button
-                type="button"
-                disabled={submitting}
-                onClick={() => { if (!submitting) { setShowForm(false); setEditingId(null); } }}
-                className="flex items-center gap-2 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <X className="w-5 h-5" />
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className={form.type === 'income' ? 'btn-in' : 'btn-out'}
+                >
+                  {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                  {submitting ? (editingId ? 'Updating…' : 'Saving…') : (editingId ? 'Update' : 'Save')}
+                </button>
+                <button
+                  type="button"
+                  disabled={submitting}
+                  onClick={() => { if (!submitting) { setShowForm(false); setEditingId(null); } }}
+                  className="btn-quiet"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
       )}
 
       {/* Show categories grouped by type when filter is 'all' */}
       {typeFilter === 'all' ? (
-        <div className="space-y-6">
-          {/* Expense Categories */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-              <ArrowDownCircle className="w-5 h-5 text-red-500" />
-              Expense Categories ({expenseCategories.length})
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {expenseCategories.map(category => (
-                <CategoryCard key={category.id} category={category} />
-              ))}
-              {expenseCategories.length === 0 && (
-                <p className="text-gray-500 col-span-full">No expense categories</p>
-              )}
-            </div>
-          </div>
-
-          {/* Income Categories */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-              <ArrowUpCircle className="w-5 h-5 text-green-500" />
-              Income Categories ({incomeCategories.length})
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {incomeCategories.map(category => (
-                <CategoryCard key={category.id} category={category} />
-              ))}
-              {incomeCategories.length === 0 && (
-                <p className="text-gray-500 col-span-full">No income categories</p>
-              )}
-            </div>
-          </div>
+        <div className="grid lg:grid-cols-2 gap-5 items-start">
+          <Group title="Expense categories" items={expenseCategories} tone="out" emptyText="No expense categories" />
+          <Group title="Income categories" items={incomeCategories} tone="in" emptyText="No income categories" />
         </div>
+      ) : filteredCategories.length === 0 ? (
+        <div className="sheet"><Empty icon={Tags} title="No categories found" /></div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredCategories.map(category => (
-            <CategoryCard key={category.id} category={category} />
-          ))}
-          {filteredCategories.length === 0 && (
-            <p className="text-gray-500 col-span-full text-center py-8">No categories found</p>
-          )}
-        </div>
+        <ul className="sheet divide-y divide-rule lg:max-w-2xl">
+          {filteredCategories.map(category => <CategoryRow key={category.id} category={category} />)}
+        </ul>
       )}
     </div>
   );

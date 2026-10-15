@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { PlusCircle, Trash2, Edit2, X, Check, Calendar, Search, Plane, RefreshCw, ChevronDown, ChevronUp, MapPin, Loader2 } from 'lucide-react';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { PlusCircle, Trash2, Edit2, X, Check, Calendar, Search, Plane, RefreshCw, MapPin, Loader2, ArrowRight } from 'lucide-react';
+import { AmountBox, Terbilang, CategoryChip, Dialog, Field, Empty, SectionTitle, formatNumber } from './ui';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 const TRAVEL_API = `${API_URL}/api/travel-expenses`;
@@ -292,6 +292,8 @@ function TravelExpenses({ formatCurrency }) {
   }
 
   const formatAmount = (amount, currency) => {
+    // Rupiah reads the same as everywhere else in the app.
+    if (String(currency || '').toUpperCase() === 'IDR') return `Rp ${formatNumber(amount)}`;
     try {
       return new Intl.NumberFormat('en-US', {
         style: 'currency',
@@ -306,97 +308,120 @@ function TravelExpenses({ formatCurrency }) {
 
   // Get unique trip names for filter dropdown
   const tripNames = [...new Set(trips.map(t => t.trip_name))];
-
   if (loading) {
     return (
-      <div className="flex justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="sheet overflow-hidden" role="status">
+        <div className="progress-line" />
+        <p className="px-5 py-12 text-center text-sm text-ink-3">Loading travel expenses…</p>
       </div>
     );
   }
 
+  const openExpense = (exp) => setSelectedExpense(exp);
+  const rowKey = (exp) => (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openExpense(exp); } };
+  const convLabel = (code) => (code === 'IDR' ? 'Rp' : code);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Sub-navigation */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {[
-          { key: 'expenses', label: 'Expenses' },
-          { key: 'trips', label: 'Trips' },
-          { key: 'summary', label: 'Summary' },
-          { key: 'categories', label: 'Categories' }
-        ].map(({ key, label }) => (
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="seg max-w-full overflow-x-auto" role="group" aria-label="Travel views">
+          {[
+            { key: 'expenses', label: 'Expenses' },
+            { key: 'trips', label: 'Trips' },
+            { key: 'summary', label: 'Summary' },
+            { key: 'categories', label: 'Categories' }
+          ].map(({ key, label }) => (
+            <button
+              key={key}
+              aria-pressed={activeView === key}
+              onClick={() => {
+                setActiveView(key);
+                if (key === 'summary') fetchSummary();
+              }}
+              className="seg-btn"
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        {activeView === 'expenses' && (
           <button
-            key={key}
-            onClick={() => {
-              setActiveView(key);
-              if (key === 'summary') fetchSummary();
-            }}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeView === key
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+            onClick={() => { setShowExpenseForm(true); setEditingExpenseId(null); }}
+            className="btn-primary"
           >
-            {label}
+            <PlusCircle className="w-4 h-4" />
+            Add Travel Expense
           </button>
-        ))}
+        )}
       </div>
 
       {/* ===== EXPENSES VIEW ===== */}
       {activeView === 'expenses' && (
         <div className="space-y-4">
           {/* Filters */}
-          <div className="bg-white rounded-xl shadow-sm border p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Search className="w-4 h-4 text-gray-500" />
-              <span className="text-sm font-medium text-gray-700">Filters</span>
+          <div className="sheet p-4">
+            <div className="flex items-center gap-2 mb-3 text-ink-2">
+              <Search className="w-4 h-4" />
+              <span className="form-head">Filters</span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-              <input
-                type="date"
-                value={filters.startDate}
-                onChange={e => setFilters(p => ({ ...p, startDate: e.target.value }))}
-                className="border rounded-lg px-3 py-2 text-sm"
-                placeholder="Start date"
-              />
-              <input
-                type="date"
-                value={filters.endDate}
-                onChange={e => setFilters(p => ({ ...p, endDate: e.target.value }))}
-                className="border rounded-lg px-3 py-2 text-sm"
-              />
-              <select
-                value={filters.categoryId}
-                onChange={e => setFilters(p => ({ ...p, categoryId: e.target.value }))}
-                className="border rounded-lg px-3 py-2 text-sm"
-              >
-                <option value="">All categories</option>
-                {categories.map(c => (
-                  <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-                ))}
-              </select>
-              <input
-                type="text"
-                value={filters.currency}
-                onChange={e => setFilters(p => ({ ...p, currency: e.target.value.toUpperCase() }))}
-                className="border rounded-lg px-3 py-2 text-sm"
-                placeholder="Currency (e.g. JPY)"
-                maxLength={3}
-              />
-              <select
-                value={filters.tripName}
-                onChange={e => setFilters(p => ({ ...p, tripName: e.target.value }))}
-                className="border rounded-lg px-3 py-2 text-sm"
-              >
-                <option value="">All trips</option>
-                {tripNames.map(t => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+              <Field label="From">
+                <input
+                  type="date"
+                  value={filters.startDate}
+                  onChange={e => setFilters(p => ({ ...p, startDate: e.target.value }))}
+                  className="field"
+                  placeholder="Start date"
+                />
+              </Field>
+              <Field label="To">
+                <input
+                  type="date"
+                  value={filters.endDate}
+                  onChange={e => setFilters(p => ({ ...p, endDate: e.target.value }))}
+                  className="field"
+                />
+              </Field>
+              <Field label="Category">
+                <select
+                  value={filters.categoryId}
+                  onChange={e => setFilters(p => ({ ...p, categoryId: e.target.value }))}
+                  className="field"
+                >
+                  <option value="">All categories</option>
+                  {categories.map(c => (
+                    <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Currency">
+                <input
+                  type="text"
+                  value={filters.currency}
+                  onChange={e => setFilters(p => ({ ...p, currency: e.target.value.toUpperCase() }))}
+                  className="field uppercase placeholder:normal-case"
+                  placeholder="e.g. JPY"
+                  maxLength={3}
+                />
+              </Field>
+              <Field label="Trip" className="col-span-2 lg:col-span-1">
+                <select
+                  value={filters.tripName}
+                  onChange={e => setFilters(p => ({ ...p, tripName: e.target.value }))}
+                  className="field"
+                >
+                  <option value="">All trips</option>
+                  {tripNames.map(t => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </Field>
             </div>
-            <div className="mt-3 flex gap-2">
+            <div className="mt-4 flex gap-2">
               <button
                 onClick={fetchExpenses}
-                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"
+                className="btn-primary"
               >
                 <Search className="w-4 h-4" />
                 Search
@@ -406,435 +431,400 @@ function TravelExpenses({ formatCurrency }) {
                   setFilters({ startDate: '', endDate: '', categoryId: '', currency: '', tripName: '' });
                   setTimeout(fetchExpenses, 0);
                 }}
-                className="px-4 py-2 border rounded-lg hover:bg-gray-50 text-sm"
+                className="btn-quiet"
               >
                 Clear
               </button>
             </div>
           </div>
 
-          {/* Add button */}
-          <div className="flex justify-end">
-            <button
-              onClick={() => { setShowExpenseForm(true); setEditingExpenseId(null); }}
-              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"
-            >
-              <PlusCircle className="w-4 h-4" />
-              Add Travel Expense
-            </button>
-          </div>
-
           {/* Expense Form Modal */}
           {showExpenseForm && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={resetExpenseForm}>
-              <div
-                className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-                onClick={e => e.stopPropagation()}
-              >
-                <div className="p-6 border-b bg-blue-50">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      <Plane className="w-6 h-6 text-blue-600" />
-                      <h3 className="text-lg font-semibold">
-                        {editingExpenseId ? 'Edit' : 'Add'} Travel Expense
-                      </h3>
-                    </div>
-                    <button
-                      onClick={resetExpenseForm}
+            <Dialog
+              wide
+              title={`${editingExpenseId ? 'Edit' : 'Add'} Travel Expense`}
+              onClose={resetExpenseForm}
+              footer={<>
+                <button
+                  type="submit"
+                  form="travel-expense-form"
+                  disabled={submittingExpense}
+                  className="btn-primary flex-1"
+                >
+                  {submittingExpense ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Check className="w-5 h-5" />
+                  )}
+                  {submittingExpense ? (editingExpenseId ? 'Updating...' : 'Saving...') : (editingExpenseId ? 'Update' : 'Save')}
+                </button>
+                <button
+                  type="button"
+                  disabled={submittingExpense}
+                  onClick={resetExpenseForm}
+                  className="btn-quiet"
+                >
+                  Cancel
+                </button>
+              </>}
+            >
+              <form id="travel-expense-form" onSubmit={handleExpenseSubmit} className="space-y-4">
+                {/* Amount & Currency row */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  <Field label="Amount *">
+                    <div className="amount-box focus-within:border-carbon focus-within:shadow-[0_0_0_3px_var(--carbon-soft)]"><span className="amount-rp">{expenseForm.currency || '—'}</span><input
+                      type="number"
+                      step="any"
+                      required
                       disabled={submittingExpense}
-                      className="p-2 hover:bg-gray-100 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      value={expenseForm.amount}
+                      onChange={e => {
+                        const amt = e.target.value;
+                        setExpenseForm(prev => ({
+                          ...prev,
+                          amount: amt,
+                          converted_amount: recalcConverted(amt, prev.exchange_rate)
+                        }));
+                      }}
+                      className="amount-fig text-base bg-transparent outline-none disabled:cursor-not-allowed"
+                      placeholder="5000"
+                    /></div>
+                  </Field>
+                  <Field label="Currency">
+                    <input
+                      type="text"
+                      disabled={submittingExpense}
+                      value={expenseForm.currency}
+                      onChange={e => setExpenseForm(prev => ({ ...prev, currency: e.target.value.toUpperCase() }))}
+                      className="field uppercase placeholder:normal-case"
+                      placeholder="USD"
+                      maxLength={3}
+                    />
+                  </Field>
+                  <Field label="Date *" className="col-span-2 sm:col-span-1">
+                    <input
+                      type="date"
+                      required
+                      disabled={submittingExpense}
+                      value={expenseForm.date}
+                      onChange={e => setExpenseForm(prev => ({ ...prev, date: e.target.value }))}
+                      className="field"
+                    />
+                  </Field>
+                </div>
+
+                {/* Exchange rate section */}
+                <div className="bg-well rounded-lg p-4 space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="form-head">Currency Conversion</span>
+                    <button
+                      type="button"
+                      onClick={fetchExchangeRate}
+                      disabled={rateLoading || submittingExpense}
+                      className="inline-flex items-center gap-1.5 text-sm font-semibold text-carbon hover:text-carbon-hover disabled:opacity-50"
                     >
-                      <X className="w-5 h-5 text-gray-500" />
+                      <RefreshCw className={`w-4 h-4 ${rateLoading ? 'animate-spin' : ''}`} />
+                      Fetch Rate
                     </button>
                   </div>
-                </div>
-
-                <div className="p-6">
-                  <form onSubmit={handleExpenseSubmit} className="space-y-4">
-                    {/* Amount & Currency row */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Amount *</label>
-                        <input
-                          type="number"
-                          step="any"
-                          required
-                          disabled={submittingExpense}
-                          value={expenseForm.amount}
-                          onChange={e => {
-                            const amt = e.target.value;
-                            setExpenseForm(prev => ({
-                              ...prev,
-                              amount: amt,
-                              converted_amount: recalcConverted(amt, prev.exchange_rate)
-                            }));
-                          }}
-                          className="w-full border rounded-lg px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                          placeholder="5000"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
-                        <input
-                          type="text"
-                          disabled={submittingExpense}
-                          value={expenseForm.currency}
-                          onChange={e => setExpenseForm(prev => ({ ...prev, currency: e.target.value.toUpperCase() }))}
-                          className="w-full border rounded-lg px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                          placeholder="USD"
-                          maxLength={3}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
-                        <input
-                          type="date"
-                          required
-                          disabled={submittingExpense}
-                          value={expenseForm.date}
-                          onChange={e => setExpenseForm(prev => ({ ...prev, date: e.target.value }))}
-                          className="w-full border rounded-lg px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Exchange rate section */}
-                    <div className="bg-gray-50 rounded-xl p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-700">Currency Conversion</span>
-                        <button
-                          type="button"
-                          onClick={fetchExchangeRate}
-                          disabled={rateLoading || submittingExpense}
-                          className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 disabled:opacity-50"
-                        >
-                          <RefreshCw className={`w-4 h-4 ${rateLoading ? 'animate-spin' : ''}`} />
-                          Fetch Rate
-                        </button>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div>
-                          <label className="block text-xs text-gray-500 mb-1">Exchange Rate</label>
-                          <input
-                            type="number"
-                            step="any"
-                            disabled={submittingExpense}
-                            value={expenseForm.exchange_rate}
-                            onChange={e => {
-                              const rate = e.target.value;
-                              setExpenseForm(prev => ({
-                                ...prev,
-                                exchange_rate: rate,
-                                converted_amount: recalcConverted(prev.amount, rate)
-                              }));
-                            }}
-                            className="w-full border rounded-lg px-3 py-2 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
-                            placeholder="106"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs text-gray-500 mb-1">Converted Amount</label>
-                          <input
-                            type="number"
-                            step="any"
-                            disabled={submittingExpense}
-                            value={expenseForm.converted_amount}
-                            onChange={e => setExpenseForm(prev => ({ ...prev, converted_amount: e.target.value }))}
-                            className="w-full border rounded-lg px-3 py-2 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
-                            placeholder="530000"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs text-gray-500 mb-1">Home Currency</label>
-                          <input
-                            type="text"
-                            disabled={submittingExpense}
-                            value={expenseForm.converted_currency}
-                            onChange={e => setExpenseForm(prev => ({ ...prev, converted_currency: e.target.value.toUpperCase() }))}
-                            className="w-full border rounded-lg px-3 py-2 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
-                            placeholder="IDR"
-                            maxLength={3}
-                          />
-                        </div>
-                      </div>
-                      {rateError && <p className="text-xs text-red-500">{rateError}</p>}
-                    </div>
-
-                    {/* Description & vendor */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                        <input
-                          type="text"
-                          disabled={submittingExpense}
-                          value={expenseForm.description}
-                          onChange={e => setExpenseForm(prev => ({ ...prev, description: e.target.value }))}
-                          className="w-full border rounded-lg px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                          placeholder="Ramen lunch"
-                          maxLength={500}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Vendor</label>
-                        <input
-                          type="text"
-                          disabled={submittingExpense}
-                          value={expenseForm.vendor}
-                          onChange={e => setExpenseForm(prev => ({ ...prev, vendor: e.target.value }))}
-                          className="w-full border rounded-lg px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                          placeholder="Ichiran"
-                          maxLength={200}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Category & Trip */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                        <select
-                          disabled={submittingExpense}
-                          value={expenseForm.category_id}
-                          onChange={e => setExpenseForm(prev => ({ ...prev, category_id: e.target.value }))}
-                          className="w-full border rounded-lg px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                        >
-                          <option value="">Select category</option>
-                          {categories.map(c => (
-                            <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Trip Name</label>
-                        <input
-                          type="text"
-                          disabled={submittingExpense}
-                          value={expenseForm.trip_name}
-                          onChange={e => setExpenseForm(prev => ({ ...prev, trip_name: e.target.value }))}
-                          className="w-full border rounded-lg px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                          placeholder="Japan 2026"
-                          maxLength={200}
-                          list="trip-names"
-                        />
-                        <datalist id="trip-names">
-                          {tripNames.map(t => (
-                            <option key={t} value={t} />
-                          ))}
-                        </datalist>
-                      </div>
-                    </div>
-
-                    {/* Notes */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                      <textarea
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <Field label="Exchange Rate" className="order-1">
+                      <input
+                        type="number"
+                        step="any"
                         disabled={submittingExpense}
-                        value={expenseForm.notes}
-                        onChange={e => setExpenseForm(prev => ({ ...prev, notes: e.target.value }))}
-                        className="w-full border rounded-lg px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                        rows={2}
-                        placeholder="Additional notes..."
-                        maxLength={1000}
+                        value={expenseForm.exchange_rate}
+                        onChange={e => {
+                          const rate = e.target.value;
+                          setExpenseForm(prev => ({
+                            ...prev,
+                            exchange_rate: rate,
+                            converted_amount: recalcConverted(prev.amount, rate)
+                          }));
+                        }}
+                        className="field num"
+                        placeholder="106"
                       />
-                    </div>
-
-                    <div className="flex gap-2 pt-2">
-                      <button
-                        type="submit"
+                    </Field>
+                    <Field label="Home Currency" className="order-2 sm:order-3">
+                      <input
+                        type="text"
                         disabled={submittingExpense}
-                        className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {submittingExpense ? (
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                        ) : (
-                          <Check className="w-5 h-5" />
-                        )}
-                        {submittingExpense ? (editingExpenseId ? 'Updating...' : 'Saving...') : (editingExpenseId ? 'Update' : 'Save')}
-                      </button>
-                      <button
-                        type="button"
+                        value={expenseForm.converted_currency}
+                        onChange={e => setExpenseForm(prev => ({ ...prev, converted_currency: e.target.value.toUpperCase() }))}
+                        className="field uppercase placeholder:normal-case"
+                        placeholder="IDR"
+                        maxLength={3}
+                      />
+                    </Field>
+                    <Field label="Converted Amount" className="order-3 sm:order-2 col-span-2 sm:col-span-1">
+                      <div className="amount-box focus-within:border-carbon focus-within:shadow-[0_0_0_3px_var(--carbon-soft)]"><span className="amount-rp">{expenseForm.converted_currency === 'IDR' ? 'Rp' : (expenseForm.converted_currency || '—')}</span><input
+                        type="number"
+                        step="any"
                         disabled={submittingExpense}
-                        onClick={resetExpenseForm}
-                        className="px-4 py-2 border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </form>
+                        value={expenseForm.converted_amount}
+                        onChange={e => setExpenseForm(prev => ({ ...prev, converted_amount: e.target.value }))}
+                        className="amount-fig text-base bg-transparent outline-none disabled:cursor-not-allowed"
+                        placeholder="530000"
+                      /></div>
+                    </Field>
+                  </div>
+                  {expenseForm.converted_currency === 'IDR' && <Terbilang value={expenseForm.converted_amount} />}
+                  {rateError && <p className="text-xs font-medium text-out" role="alert">{rateError}</p>}
                 </div>
-              </div>
-            </div>
+
+                {/* Description & vendor */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Field label="Description">
+                    <input
+                      type="text"
+                      disabled={submittingExpense}
+                      value={expenseForm.description}
+                      onChange={e => setExpenseForm(prev => ({ ...prev, description: e.target.value }))}
+                      className="field"
+                      placeholder="Ramen lunch"
+                      maxLength={500}
+                    />
+                  </Field>
+                  <Field label="Vendor">
+                    <input
+                      type="text"
+                      disabled={submittingExpense}
+                      value={expenseForm.vendor}
+                      onChange={e => setExpenseForm(prev => ({ ...prev, vendor: e.target.value }))}
+                      className="field"
+                      placeholder="Ichiran"
+                      maxLength={200}
+                    />
+                  </Field>
+                </div>
+
+                {/* Category & Trip */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Field label="Category">
+                    <select
+                      disabled={submittingExpense}
+                      value={expenseForm.category_id}
+                      onChange={e => setExpenseForm(prev => ({ ...prev, category_id: e.target.value }))}
+                      className="field"
+                    >
+                      <option value="">Select category</option>
+                      {categories.map(c => (
+                        <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Trip Name">
+                    <input
+                      type="text"
+                      disabled={submittingExpense}
+                      value={expenseForm.trip_name}
+                      onChange={e => setExpenseForm(prev => ({ ...prev, trip_name: e.target.value }))}
+                      className="field"
+                      placeholder="Japan 2026"
+                      maxLength={200}
+                      list="trip-names"
+                    />
+                    <datalist id="trip-names">
+                      {tripNames.map(t => (
+                        <option key={t} value={t} />
+                      ))}
+                    </datalist>
+                  </Field>
+                </div>
+
+                {/* Notes */}
+                <Field label="Notes">
+                  <textarea
+                    disabled={submittingExpense}
+                    value={expenseForm.notes}
+                    onChange={e => setExpenseForm(prev => ({ ...prev, notes: e.target.value }))}
+                    className="field"
+                    rows={2}
+                    placeholder="Additional notes..."
+                    maxLength={1000}
+                  />
+                </Field>
+              </form>
+            </Dialog>
           )}
 
           {/* Detail Modal */}
           {selectedExpense && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedExpense(null)}>
-              <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-                <div className="p-6 border-b bg-blue-50">
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-center gap-3">
-                      <div className="p-3 bg-blue-100 rounded-xl">
-                        <Plane className="w-8 h-8 text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="text-xl sm:text-3xl font-bold text-blue-600">
-                          {formatAmount(selectedExpense.amount, selectedExpense.currency)}
-                        </p>
-                        {selectedExpense.converted_amount && (
-                          <p className="text-sm text-gray-500">
-                            = {formatAmount(selectedExpense.converted_amount, selectedExpense.converted_currency)}
-                          </p>
+            <Dialog
+              wide
+              title="Travel expense"
+              onClose={() => setSelectedExpense(null)}
+              footer={<>
+                <button
+                  onClick={e => handleDeleteExpense(selectedExpense.id, e)}
+                  className="btn-danger-quiet"
+                >
+                  <Trash2 className="w-4 h-4" /> Delete
+                </button>
+                <button
+                  onClick={e => handleEditExpense(selectedExpense, e)}
+                  className="btn-primary flex-1"
+                >
+                  <Edit2 className="w-4 h-4" /> Edit
+                </button>
+              </>}
+            >
+              <div className="space-y-4">
+                <div>
+                  <p className="text-2xl sm:text-3xl font-bold num text-ink">
+                    {formatAmount(selectedExpense.amount, selectedExpense.currency)}
+                  </p>
+                  {selectedExpense.converted_amount ? (
+                    <div className="mt-3 max-w-xs">
+                      <AmountBox value={selectedExpense.converted_amount} currency={convLabel(selectedExpense.converted_currency)} size="sm" />
+                      {selectedExpense.converted_currency === 'IDR' && <Terbilang value={selectedExpense.converted_amount} className="mt-1.5" />}
+                    </div>
+                  ) : null}
+                </div>
+
+                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Detail label="Date">
+                    <span className="flex items-center gap-2 num">
+                      <Calendar className="w-4 h-4 text-ink-3" />
+                      {selectedExpense.date}
+                    </span>
+                  </Detail>
+                  <Detail label="Category">
+                    <CategoryChip name={selectedExpense.category_name} icon={selectedExpense.category_icon} color={selectedExpense.category_color} />
+                  </Detail>
+                  <Detail label="Description">{selectedExpense.description || '-'}</Detail>
+                  <Detail label="Vendor">{selectedExpense.vendor || '-'}</Detail>
+                  {selectedExpense.trip_name && (
+                    <Detail label="Trip">
+                      <span className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-ink-3" />
+                        {selectedExpense.trip_name}
+                      </span>
+                    </Detail>
+                  )}
+                  {selectedExpense.exchange_rate && (
+                    <Detail label="Exchange Rate">
+                      <span className="num">1 {selectedExpense.currency} = {selectedExpense.exchange_rate} {selectedExpense.converted_currency}</span>
+                    </Detail>
+                  )}
+                </dl>
+                {selectedExpense.notes && (
+                  <dl>
+                    <Detail label="Notes">
+                      <span className="text-sm text-ink-2 font-normal">{selectedExpense.notes}</span>
+                    </Detail>
+                  </dl>
+                )}
+                <div className="text-xs text-ink-3 pt-4 border-t border-rule num">
+                  <p>Created: {new Date(selectedExpense.created_at).toLocaleString()}</p>
+                  {selectedExpense.updated_at !== selectedExpense.created_at && (
+                    <p>Updated: {new Date(selectedExpense.updated_at).toLocaleString()}</p>
+                  )}
+                </div>
+              </div>
+            </Dialog>
+          )}
+
+          {/* Expenses list: stacked rows on phones */}
+          <ul className="sheet divide-y divide-rule overflow-hidden md:hidden">
+            {expenses.length === 0 ? (
+              <li>
+                <Empty icon={Plane} title="No travel expenses found">Change the filters or add a travel expense.</Empty>
+              </li>
+            ) : (
+              expenses.map(exp => (
+                <li key={exp.id}>
+                  <button
+                    type="button"
+                    onClick={() => openExpense(exp)}
+                    className="w-full text-left px-4 py-3 flex gap-3 hover:bg-well transition-colors"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-ink truncate">{exp.description || '-'}</p>
+                      {(exp.vendor || exp.trip_name) && (
+                        <p className="text-sm text-ink-3 truncate">{[exp.vendor, exp.trip_name].filter(Boolean).join(' · ')}</p>
+                      )}
+                      <div className="mt-1.5 flex items-center gap-2 min-w-0">
+                        <span className="text-xs text-ink-3 num shrink-0">{exp.date}</span>
+                        {exp.category_name && (
+                          <CategoryChip name={exp.category_name} icon={exp.category_icon} color={exp.category_color} />
                         )}
                       </div>
                     </div>
-                    <button onClick={() => setSelectedExpense(null)} className="p-2 hover:bg-gray-100 rounded-lg">
-                      <X className="w-5 h-5 text-gray-500" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="p-6 space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="bg-gray-50 rounded-xl p-4">
-                      <p className="text-sm text-gray-500 mb-1">Date</p>
-                      <p className="font-medium flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-gray-400" />
-                        {selectedExpense.date}
-                      </p>
+                    <div className="text-right shrink-0">
+                      <p className="num font-semibold text-ink">{formatAmount(exp.amount, exp.currency)}</p>
+                      {exp.converted_amount ? (
+                        <p className="num text-xs text-ink-3 mt-0.5">{formatAmount(exp.converted_amount, exp.converted_currency)}</p>
+                      ) : null}
                     </div>
-                    <div className="bg-gray-50 rounded-xl p-4">
-                      <p className="text-sm text-gray-500 mb-1">Category</p>
-                      {selectedExpense.category_name ? (
-                        <span
-                          className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm font-medium"
-                          style={{ backgroundColor: selectedExpense.category_color + '20', color: selectedExpense.category_color }}
-                        >
-                          {selectedExpense.category_icon} {selectedExpense.category_name}
-                        </span>
-                      ) : (
-                        <p className="text-gray-400">Uncategorized</p>
-                      )}
-                    </div>
-                    <div className="bg-gray-50 rounded-xl p-4">
-                      <p className="text-sm text-gray-500 mb-1">Description</p>
-                      <p className="font-medium">{selectedExpense.description || '-'}</p>
-                    </div>
-                    <div className="bg-gray-50 rounded-xl p-4">
-                      <p className="text-sm text-gray-500 mb-1">Vendor</p>
-                      <p className="font-medium">{selectedExpense.vendor || '-'}</p>
-                    </div>
-                    {selectedExpense.trip_name && (
-                      <div className="bg-gray-50 rounded-xl p-4">
-                        <p className="text-sm text-gray-500 mb-1">Trip</p>
-                        <p className="font-medium flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-gray-400" />
-                          {selectedExpense.trip_name}
-                        </p>
-                      </div>
-                    )}
-                    {selectedExpense.exchange_rate && (
-                      <div className="bg-gray-50 rounded-xl p-4">
-                        <p className="text-sm text-gray-500 mb-1">Exchange Rate</p>
-                        <p className="font-medium">
-                          1 {selectedExpense.currency} = {selectedExpense.exchange_rate} {selectedExpense.converted_currency}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                  {selectedExpense.notes && (
-                    <div className="bg-gray-50 rounded-xl p-4">
-                      <p className="text-sm text-gray-500 mb-1">Notes</p>
-                      <p className="text-sm text-gray-600">{selectedExpense.notes}</p>
-                    </div>
-                  )}
-                  <div className="text-xs text-gray-400 pt-4 border-t">
-                    <p>Created: {new Date(selectedExpense.created_at).toLocaleString()}</p>
-                    {selectedExpense.updated_at !== selectedExpense.created_at && (
-                      <p>Updated: {new Date(selectedExpense.updated_at).toLocaleString()}</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="p-6 border-t bg-gray-50 flex gap-2 justify-end">
-                  <button
-                    onClick={e => handleEditExpense(selectedExpense, e)}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                  >
-                    <Edit2 className="w-4 h-4" /> Edit
                   </button>
-                  <button
-                    onClick={e => handleDeleteExpense(selectedExpense.id, e)}
-                    className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                  >
-                    <Trash2 className="w-4 h-4" /> Delete
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+                </li>
+              ))
+            )}
+          </ul>
 
-          {/* Expenses Table */}
-          <div className="bg-white rounded-xl shadow-sm border overflow-hidden overflow-x-auto">
-            <table className="w-full min-w-[800px]">
-              <thead className="bg-gray-50 border-b">
+          {/* Expenses Table: md and up */}
+          <div className="sheet overflow-hidden overflow-x-auto hidden md:block">
+            <table className="w-full">
+              <thead className="bg-well border-b border-rule">
                 <tr>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Date</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Description</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Category</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Trip</th>
-                  <th className="text-right px-4 py-3 text-sm font-medium text-gray-500">Amount</th>
-                  <th className="text-right px-4 py-3 text-sm font-medium text-gray-500">Converted</th>
-                  <th className="text-right px-4 py-3 text-sm font-medium text-gray-500">Actions</th>
+                  <th className="text-left px-4 py-2.5 form-head">Date</th>
+                  <th className="text-left px-4 py-2.5 form-head">Description</th>
+                  <th className="text-left px-4 py-2.5 form-head">Category</th>
+                  <th className="text-left px-4 py-2.5 form-head">Trip</th>
+                  <th className="text-right px-4 py-2.5 form-head">Amount</th>
+                  <th className="text-right px-4 py-2.5 form-head">Converted</th>
+                  <th className="text-right px-4 py-2.5 form-head"><span className="sr-only">Actions</span></th>
                 </tr>
               </thead>
-              <tbody className="divide-y">
+              <tbody className="divide-y divide-rule">
                 {expenses.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="text-center py-8 text-gray-500">
-                      No travel expenses found
+                    <td colSpan="7">
+                      <Empty icon={Plane} title="No travel expenses found">Change the filters or add a travel expense.</Empty>
                     </td>
                   </tr>
                 ) : (
                   expenses.map(exp => (
                     <tr
                       key={exp.id}
-                      className="hover:bg-gray-50 cursor-pointer transition-colors"
-                      onClick={() => setSelectedExpense(exp)}
+                      tabIndex={0}
+                      className="hover:bg-well cursor-pointer transition-colors focus-visible:bg-well"
+                      onClick={() => openExpense(exp)}
+                      onKeyDown={rowKey(exp)}
                     >
-                      <td className="px-4 py-3 text-sm">{exp.date}</td>
+                      <td className="px-4 py-3 text-sm num text-ink-2 whitespace-nowrap">{exp.date}</td>
                       <td className="px-4 py-3">
-                        <div className="font-medium">{exp.description || '-'}</div>
-                        {exp.vendor && <div className="text-sm text-gray-500">{exp.vendor}</div>}
+                        <div className="font-semibold text-ink">{exp.description || '-'}</div>
+                        {exp.vendor && <div className="text-sm text-ink-3">{exp.vendor}</div>}
                       </td>
                       <td className="px-4 py-3">
                         {exp.category_name ? (
-                          <span
-                            className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm"
-                            style={{ backgroundColor: (exp.category_color || '#999') + '20', color: exp.category_color || '#999' }}
-                          >
-                            {exp.category_icon} {exp.category_name}
-                          </span>
-                        ) : '-'}
+                          <CategoryChip name={exp.category_name} icon={exp.category_icon} color={exp.category_color} />
+                        ) : <span className="text-ink-3">-</span>}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{exp.trip_name || '-'}</td>
-                      <td className="px-4 py-3 text-right font-medium">
+                      <td className="px-4 py-3 text-sm text-ink-2">{exp.trip_name || '-'}</td>
+                      <td className="px-4 py-3 text-right font-semibold num text-ink">
                         {formatAmount(exp.amount, exp.currency)}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm text-gray-500">
+                      <td className="px-4 py-3 text-right text-sm num text-ink-3">
                         {exp.converted_amount
                           ? formatAmount(exp.converted_amount, exp.converted_currency)
                           : '-'}
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-3 py-2 text-right whitespace-nowrap">
                         <button
                           onClick={e => handleEditExpense(exp, e)}
-                          className="p-1 text-gray-500 hover:text-blue-600"
+                          className="icon-btn"
+                          aria-label={`Edit ${exp.description || 'travel expense'}`}
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button
                           onClick={e => handleDeleteExpense(exp.id, e)}
-                          className="p-1 text-gray-500 hover:text-red-600 ml-2"
+                          className="icon-btn hover:text-out"
+                          aria-label={`Delete ${exp.description || 'travel expense'}`}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -851,55 +841,55 @@ function TravelExpenses({ formatCurrency }) {
       {/* ===== TRIPS VIEW ===== */}
       {activeView === 'trips' && (
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-blue-600" />
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <MapPin className="w-5 h-5 text-carbon" />
             Trips
           </h2>
           {trips.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-sm border p-8 text-center text-gray-500">
-              No trips found. Create travel expenses with a trip name to see them here.
+            <div className="sheet">
+              <Empty icon={MapPin} title="No trips found">Create travel expenses with a trip name to see them here.</Empty>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {trips.map((trip, i) => (
-                <div key={i} className="bg-white rounded-xl shadow-sm border p-6 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                      <Plane className="w-5 h-5 text-blue-600" />
-                      {trip.trip_name}
+                <div key={i} className="sheet p-5 space-y-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="text-lg font-bold flex items-center gap-2 min-w-0">
+                      <Plane className="w-5 h-5 text-carbon shrink-0" />
+                      <span className="truncate">{trip.trip_name}</span>
                     </h3>
-                    <span className="text-sm text-gray-500">{trip.expense_count} expenses</span>
+                    <span className="text-sm text-ink-3 num shrink-0 mt-1">{trip.expense_count} expenses</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-blue-50 rounded-lg p-3">
-                      <p className="text-xs text-gray-500">Total ({trip.currency})</p>
-                      <p className="font-bold text-blue-700">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <p className="form-head mb-1.5">Total ({trip.currency})</p>
+                      <p className="text-xl font-bold num text-ink">
                         {formatAmount(trip.total_amount, trip.currency)}
                       </p>
                     </div>
-                    {trip.total_converted && (
-                      <div className="bg-green-50 rounded-lg p-3">
-                        <p className="text-xs text-gray-500">Converted ({trip.converted_currency})</p>
-                        <p className="font-bold text-green-700">
-                          {formatAmount(trip.total_converted, trip.converted_currency)}
-                        </p>
+                    {trip.total_converted ? (
+                      <div>
+                        <p className="form-head mb-1.5">Converted ({trip.converted_currency})</p>
+                        <AmountBox value={trip.total_converted} currency={convLabel(trip.converted_currency)} />
                       </div>
-                    )}
+                    ) : null}
                   </div>
-                  <div className="text-sm text-gray-500 flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    {trip.start_date} — {trip.end_date}
+                  <div className="flex items-center justify-between gap-3 pt-3 border-t border-rule">
+                    <span className="text-sm text-ink-3 flex items-center gap-2 num">
+                      <Calendar className="w-4 h-4" />
+                      {trip.start_date} – {trip.end_date}
+                    </span>
+                    <button
+                      onClick={() => {
+                        setFilters(p => ({ ...p, tripName: trip.trip_name }));
+                        setActiveView('expenses');
+                        setTimeout(fetchExpenses, 0);
+                      }}
+                      className="inline-flex items-center gap-1 text-sm font-semibold text-carbon hover:text-carbon-hover"
+                    >
+                      View expenses <ArrowRight className="w-4 h-4" />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => {
-                      setFilters(p => ({ ...p, tripName: trip.trip_name }));
-                      setActiveView('expenses');
-                      setTimeout(fetchExpenses, 0);
-                    }}
-                    className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-                  >
-                    View expenses →
-                  </button>
                 </div>
               ))}
             </div>
@@ -910,36 +900,42 @@ function TravelExpenses({ formatCurrency }) {
       {/* ===== SUMMARY VIEW ===== */}
       {activeView === 'summary' && (
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Trip Summary</h2>
+          <h2 className="text-xl font-bold">Trip Summary</h2>
 
           {/* Summary Filters */}
-          <div className="bg-white rounded-xl shadow-sm border p-4">
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-              <select
-                value={summaryFilters.tripName}
-                onChange={e => setSummaryFilters(p => ({ ...p, tripName: e.target.value }))}
-                className="border rounded-lg px-3 py-2 text-sm"
-              >
-                <option value="">All trips</option>
-                {tripNames.map(t => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
-              <input
-                type="date"
-                value={summaryFilters.startDate}
-                onChange={e => setSummaryFilters(p => ({ ...p, startDate: e.target.value }))}
-                className="border rounded-lg px-3 py-2 text-sm"
-              />
-              <input
-                type="date"
-                value={summaryFilters.endDate}
-                onChange={e => setSummaryFilters(p => ({ ...p, endDate: e.target.value }))}
-                className="border rounded-lg px-3 py-2 text-sm"
-              />
+          <div className="sheet p-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 items-end">
+              <Field label="Trip" className="col-span-2 sm:col-span-1">
+                <select
+                  value={summaryFilters.tripName}
+                  onChange={e => setSummaryFilters(p => ({ ...p, tripName: e.target.value }))}
+                  className="field"
+                >
+                  <option value="">All trips</option>
+                  {tripNames.map(t => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="From">
+                <input
+                  type="date"
+                  value={summaryFilters.startDate}
+                  onChange={e => setSummaryFilters(p => ({ ...p, startDate: e.target.value }))}
+                  className="field"
+                />
+              </Field>
+              <Field label="To">
+                <input
+                  type="date"
+                  value={summaryFilters.endDate}
+                  onChange={e => setSummaryFilters(p => ({ ...p, endDate: e.target.value }))}
+                  className="field"
+                />
+              </Field>
               <button
                 onClick={fetchSummary}
-                className="flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"
+                className="btn-primary col-span-2 sm:col-span-1"
               >
                 <Search className="w-4 h-4" />
                 Get Summary
@@ -948,32 +944,33 @@ function TravelExpenses({ formatCurrency }) {
           </div>
 
           {summary ? (
-            <div className="space-y-6">
-              {/* By Currency */}
-              {summary.by_currency && summary.by_currency.length > 0 && (
-                <div className="bg-white rounded-xl shadow-sm border p-6">
-                  <h3 className="text-lg font-semibold mb-4">By Currency</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {summary.by_currency.map((item, i) => (
-                      <div key={i} className="bg-blue-50 rounded-xl p-4">
-                        <p className="text-sm text-gray-500">{item.currency}</p>
-                        <p className="text-xl font-bold text-blue-700">{formatAmount(item.total, item.currency)}</p>
-                        <p className="text-sm text-gray-500">{item.count} expenses</p>
+            <div className="space-y-4">
+              {/* Converted Total */}
+              {summary.converted_total && summary.converted_total.length > 0 && (
+                <div className="sheet p-5">
+                  <SectionTitle>Total Converted</SectionTitle>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {summary.converted_total.map((item, i) => (
+                      <div key={i}>
+                        <p className="form-head mb-1.5">{item.converted_currency}</p>
+                        <AmountBox value={item.total} currency={convLabel(item.converted_currency)} size="lg" />
+                        {item.converted_currency === 'IDR' && <Terbilang value={item.total} className="mt-1.5" />}
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Converted Total */}
-              {summary.converted_total && summary.converted_total.length > 0 && (
-                <div className="bg-white rounded-xl shadow-sm border p-6">
-                  <h3 className="text-lg font-semibold mb-4">Total Converted</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {summary.converted_total.map((item, i) => (
-                      <div key={i} className="bg-green-50 rounded-xl p-4">
-                        <p className="text-sm text-gray-500">{item.converted_currency}</p>
-                        <p className="text-2xl font-bold text-green-700">{formatAmount(item.total, item.converted_currency)}</p>
+              {/* By Currency */}
+              {summary.by_currency && summary.by_currency.length > 0 && (
+                <div className="sheet p-5">
+                  <SectionTitle>By Currency</SectionTitle>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {summary.by_currency.map((item, i) => (
+                      <div key={i} className="rounded-lg border border-rule p-4">
+                        <p className="form-head">{item.currency}</p>
+                        <p className="text-xl font-bold num text-ink mt-1">{formatAmount(item.total, item.currency)}</p>
+                        <p className="text-sm text-ink-3 num">{item.count} expenses</p>
                       </div>
                     ))}
                   </div>
@@ -982,54 +979,39 @@ function TravelExpenses({ formatCurrency }) {
 
               {/* By Category */}
               {summary.by_category && summary.by_category.length > 0 && (
-                <div className="bg-white rounded-xl shadow-sm border p-6">
-                  <h3 className="text-lg font-semibold mb-4">By Category</h3>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="space-y-3">
-                      {summary.by_category.map((item, i) => (
-                        <div key={i} className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm"
-                              style={{ backgroundColor: (item.category_color || '#999') + '20', color: item.category_color || '#999' }}
-                            >
-                              {item.category_icon} {item.category_name}
-                            </span>
-                            <span className="text-xs text-gray-500">{item.count} items</span>
-                          </div>
-                          <span className="font-medium">{formatAmount(item.total, item.currency)}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <PieChart>
-                        <Pie
-                          data={summary.by_category.map(c => ({
-                            name: c.category_name,
-                            value: c.total,
-                            color: c.category_color || '#999'
-                          }))}
-                          dataKey="value"
-                          nameKey="name"
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={100}
-                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                        >
-                          {summary.by_category.map((entry, index) => (
-                            <Cell key={index} fill={entry.category_color || '#999'} />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
+                <div className="sheet p-5">
+                  <SectionTitle>By Category</SectionTitle>
+                  {(() => {
+                    // Share bars only when every row is in one currency; mixed currencies don't compare.
+                    const oneCurrency = new Set(summary.by_category.map(c => c.currency)).size === 1;
+                    const max = Math.max(...summary.by_category.map(c => Number(c.total) || 0));
+                    return (
+                      <ul className="divide-y divide-rule lg:max-w-2xl">
+                        {summary.by_category.map((item, i) => (
+                          <li key={i} className="py-3">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <CategoryChip name={item.category_name} icon={item.category_icon} color={item.category_color} />
+                                <span className="text-xs text-ink-3 num shrink-0">{item.count} items</span>
+                              </div>
+                              <span className="font-semibold num text-ink">{formatAmount(item.total, item.currency)}</span>
+                            </div>
+                            {oneCurrency && max > 0 && (
+                              <div className="mt-2 h-1.5 rounded-full bg-well overflow-hidden">
+                                <div className="h-full rounded-full" style={{ width: `${(item.total / max) * 100}%`, backgroundColor: item.category_color || 'var(--ink-3)' }} />
+                              </div>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    );
+                  })()}
                 </div>
               )}
             </div>
           ) : (
-            <div className="bg-white rounded-xl shadow-sm border p-8 text-center text-gray-500">
-              Click "Get Summary" to load trip summary data.
+            <div className="sheet">
+              <Empty icon={Search} title="No summary loaded">Pick a trip or dates, then Get Summary.</Empty>
             </div>
           )}
         </div>
@@ -1038,11 +1020,11 @@ function TravelExpenses({ formatCurrency }) {
       {/* ===== CATEGORIES VIEW ===== */}
       {activeView === 'categories' && (
         <div className="space-y-4">
-          <div className="flex justify-between items-center flex-wrap gap-4">
-            <h2 className="text-xl font-semibold">Travel Categories</h2>
+          <div className="flex justify-between items-center flex-wrap gap-3">
+            <h2 className="text-xl font-bold">Travel Categories</h2>
             <button
               onClick={() => { setShowCategoryForm(true); setEditingCategoryId(null); setCategoryForm({ name: '', icon: '', color: '#4ECDC4' }); }}
-              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"
+              className="btn-primary"
             >
               <PlusCircle className="w-4 h-4" />
               Add Category
@@ -1050,98 +1032,98 @@ function TravelExpenses({ formatCurrency }) {
           </div>
 
           {showCategoryForm && (
-            <div className="bg-blue-50 rounded-xl shadow-sm p-6 border-2 border-blue-200">
-              <h3 className="text-lg font-semibold mb-4">
-                {editingCategoryId ? 'Edit' : 'Add'} Travel Category
-              </h3>
-              <form onSubmit={handleCategorySubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
-                    <input
-                      type="text"
-                      required
-                      disabled={submittingCategory}
-                      value={categoryForm.name}
-                      onChange={e => setCategoryForm(p => ({ ...p, name: e.target.value }))}
-                      className="w-full border rounded-lg px-3 py-2 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
-                      placeholder="Category name"
-                    />
+            <div className="sheet overflow-hidden">
+              <div className="h-1 bg-carbon" />
+              <div className="p-5">
+                <h3 className="text-lg font-bold mb-4">
+                  {editingCategoryId ? 'Edit' : 'Add'} Travel Category
+                </h3>
+                <form onSubmit={handleCategorySubmit} className="space-y-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <Field label="Name *" className="col-span-2 md:col-span-1">
+                      <input
+                        type="text"
+                        required
+                        disabled={submittingCategory}
+                        value={categoryForm.name}
+                        onChange={e => setCategoryForm(p => ({ ...p, name: e.target.value }))}
+                        className="field"
+                        placeholder="Category name"
+                      />
+                    </Field>
+                    <Field label="Icon (emoji)">
+                      <input
+                        type="text"
+                        disabled={submittingCategory}
+                        value={categoryForm.icon}
+                        onChange={e => setCategoryForm(p => ({ ...p, icon: e.target.value }))}
+                        className="field"
+                        placeholder="✈️"
+                      />
+                    </Field>
+                    <Field label="Color">
+                      <input
+                        type="color"
+                        disabled={submittingCategory}
+                        value={categoryForm.color}
+                        onChange={e => setCategoryForm(p => ({ ...p, color: e.target.value }))}
+                        className="field"
+                      />
+                    </Field>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Icon (emoji)</label>
-                    <input
-                      type="text"
+                  <div className="flex gap-2">
+                    <button
+                      type="submit"
                       disabled={submittingCategory}
-                      value={categoryForm.icon}
-                      onChange={e => setCategoryForm(p => ({ ...p, icon: e.target.value }))}
-                      className="w-full border rounded-lg px-3 py-2 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
-                      placeholder="✈️"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Color</label>
-                    <input
-                      type="color"
+                      className="btn-primary"
+                    >
+                      {submittingCategory ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <Check className="w-5 h-5" />
+                      )}
+                      {submittingCategory ? (editingCategoryId ? 'Updating...' : 'Saving...') : (editingCategoryId ? 'Update' : 'Save')}
+                    </button>
+                    <button
+                      type="button"
                       disabled={submittingCategory}
-                      value={categoryForm.color}
-                      onChange={e => setCategoryForm(p => ({ ...p, color: e.target.value }))}
-                      className="w-full h-10 border rounded-lg cursor-pointer bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
-                    />
+                      onClick={() => { if (!submittingCategory) { setShowCategoryForm(false); setEditingCategoryId(null); } }}
+                      className="btn-quiet"
+                    >
+                      <X className="w-5 h-5" /> Cancel
+                    </button>
                   </div>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    type="submit"
-                    disabled={submittingCategory}
-                    className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {submittingCategory ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    ) : (
-                      <Check className="w-5 h-5" />
-                    )}
-                    {submittingCategory ? (editingCategoryId ? 'Updating...' : 'Saving...') : (editingCategoryId ? 'Update' : 'Save')}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={submittingCategory}
-                    onClick={() => { if (!submittingCategory) { setShowCategoryForm(false); setEditingCategoryId(null); } }}
-                    className="flex items-center gap-2 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <X className="w-5 h-5" /> Cancel
-                  </button>
-                </div>
-              </form>
+                </form>
+              </div>
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {categories.map(cat => (
-              <div key={cat.id} className="bg-white rounded-xl shadow-sm p-4 border-2 border-blue-200 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-10 h-10 rounded-lg flex items-center justify-center text-xl"
-                    style={{ backgroundColor: cat.color + '20' }}
-                  >
+              <div key={cat.id} className="sheet p-3 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-lg bg-well flex items-center justify-center text-xl shrink-0" aria-hidden="true">
                     {cat.icon}
                   </div>
-                  <span className="font-medium">{cat.name}</span>
+                  <span className="chip-dot" style={{ backgroundColor: cat.color || 'var(--ink-3)' }} />
+                  <span className="font-semibold truncate">{cat.name}</span>
                 </div>
-                <div className="flex gap-1">
+                <div className="flex gap-1 shrink-0">
                   <button
                     onClick={() => {
                       setCategoryForm({ name: cat.name, icon: cat.icon || '', color: cat.color || '#4ECDC4' });
                       setEditingCategoryId(cat.id);
                       setShowCategoryForm(true);
                     }}
-                    className="p-2 text-gray-500 hover:text-blue-600 rounded-lg hover:bg-gray-100"
+                    className="icon-btn"
+                    aria-label={`Edit ${cat.name}`}
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleDeleteCategory(cat.id)}
-                    className="p-2 text-gray-500 hover:text-red-600 rounded-lg hover:bg-gray-100"
+                    className="icon-btn hover:text-out"
+                    aria-label={`Delete ${cat.name}`}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -1149,11 +1131,23 @@ function TravelExpenses({ formatCurrency }) {
               </div>
             ))}
             {categories.length === 0 && (
-              <p className="text-gray-500 col-span-full text-center py-8">No travel categories yet</p>
+              <div className="sheet col-span-full">
+                <Empty icon={Plane} title="No travel categories yet">Add one to group trip spending.</Empty>
+              </div>
             )}
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+
+function Detail({ label, children }) {
+  return (
+    <div className="rounded-lg border border-rule p-3">
+      <dt className="form-head mb-1">{label}</dt>
+      <dd className="font-medium text-ink">{children}</dd>
     </div>
   );
 }
