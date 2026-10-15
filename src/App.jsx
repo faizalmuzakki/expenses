@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { PlusCircle, Trash2, Edit2, X, Check, TrendingUp, TrendingDown, Wallet, Calendar, Tag, LogOut, ArrowUpCircle, ArrowDownCircle, Image, Eye, BarChart3, Plane, Loader2 } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import Login from './Login';
+import { installAuthFetch, withToken } from './auth';
 import InvestmentTracker from './InvestmentTracker';
 import TravelExpenses from './TravelExpenses';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
+installAuthFetch(API_URL);
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -596,7 +598,7 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
                   </h4>
                   <div className="border rounded-xl overflow-hidden bg-gray-50">
                     <img
-                      src={`${API_URL}${selectedTransaction.image_url}`}
+                      src={withToken(`${API_URL}${selectedTransaction.image_url}`)}
                       alt="Receipt"
                       className="w-full max-h-96 object-contain"
                     />

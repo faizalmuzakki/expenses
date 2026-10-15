@@ -50,7 +50,7 @@ export default function Login({ onLogin }) {
 
             if (res.ok) {
                 // Store auth in localStorage
-                localStorage.setItem('expense_auth', JSON.stringify({ email, authenticated: true }));
+                localStorage.setItem('expense_auth', JSON.stringify({ email, authenticated: true, token: data.token }));
                 onLogin();
             } else {
                 setError(data.error || 'Invalid PIN');
