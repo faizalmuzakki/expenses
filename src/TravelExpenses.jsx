@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { PlusCircle, Trash2, Edit2, X, Check, Calendar, Search, Plane, RefreshCw, MapPin, Loader2, ArrowRight } from 'lucide-react';
 import { AmountBox, Terbilang, CategoryChip, Dialog, Field, Empty, SectionTitle, formatNumber } from './ui';
+import { localDate } from './dates';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 const TRAVEL_API = `${API_URL}/api/travel-expenses`;
@@ -33,7 +34,7 @@ function TravelExpenses({ formatCurrency }) {
     description: '',
     vendor: '',
     category_id: '',
-    date: new Date().toISOString().split('T')[0],
+    date: localDate(),
     trip_name: '',
     source: 'manual',
     notes: ''
@@ -204,7 +205,7 @@ function TravelExpenses({ formatCurrency }) {
       description: '',
       vendor: '',
       category_id: '',
-      date: new Date().toISOString().split('T')[0],
+      date: localDate(),
       trip_name: '',
       source: 'manual',
       notes: ''

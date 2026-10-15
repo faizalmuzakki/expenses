@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { localDate } from './dates';
 import {
     BarChart, Bar, XAxis, YAxis, Tooltip,
     ResponsiveContainer, Legend, CartesianGrid
@@ -43,7 +44,7 @@ export default function InvestmentTracker({ formatCurrency }) {
     const [contributeForm, setContributeForm] = useState({
         type: 'gold',
         amount: '',
-        date: new Date().toISOString().split('T')[0],
+        date: localDate(),
         notes: ''
     });
     const [holdingsForm, setHoldingsForm] = useState({});
@@ -115,7 +116,7 @@ export default function InvestmentTracker({ formatCurrency }) {
                 return;
             }
             setShowContributeForm(false);
-            setContributeForm({ type: 'gold', amount: '', date: new Date().toISOString().split('T')[0], notes: '' });
+            setContributeForm({ type: 'gold', amount: '', date: localDate(), notes: '' });
             fetchData();
         } catch (error) {
             console.error('Error recording contribution:', error);
