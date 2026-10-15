@@ -846,7 +846,12 @@ function TravelExpenses({ formatCurrency }) {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {trips.map((trip, i) => (
+              {trips.map((trip, i) => {
+                // Newer API: one total per currency (mixed trips have null currency/total_amount).
+                const totals = trip.totals_by_currency?.length
+                  ? trip.totals_by_currency
+                  : [{ currency: trip.currency, total_amount: trip.total_amount }];
+                return (
                 <div key={i} className="sheet p-5 space-y-4">
                   <div className="flex items-start justify-between gap-3">
                     <h3 className="text-lg font-bold flex items-center gap-2 min-w-0">
@@ -857,9 +862,9 @@ function TravelExpenses({ formatCurrency }) {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <p className="form-head mb-1.5">Total ({trip.currency})</p>
+                      <p className="form-head mb-1.5">Total{totals.length === 1 ? ` (${totals[0].currency})` : ''}</p>
                       <p className="text-xl font-bold num text-ink">
-                        {formatAmount(trip.total_amount, trip.currency)}
+                        {totals.map(t => formatAmount(t.total_amount, t.currency)).join(' + ')}
                       </p>
                     </div>
                     {trip.total_converted ? (
@@ -887,7 +892,8 @@ function TravelExpenses({ formatCurrency }) {
                     </button>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
