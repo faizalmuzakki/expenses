@@ -4,8 +4,10 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveCo
 import Login from './Login';
 import InvestmentTracker from './InvestmentTracker';
 import TravelExpenses from './TravelExpenses';
+import { installAuthFetch, withToken } from './auth';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
+installAuthFetch(API_URL);
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -596,7 +598,7 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
                   </h4>
                   <div className="border rounded-xl overflow-hidden bg-gray-50">
                     <img
-                      src={`${API_URL}${selectedTransaction.image_url}`}
+                      src={withToken(`${API_URL}${selectedTransaction.image_url}`)}
                       alt="Receipt"
                       className="w-full max-h-96 object-contain"
                     />
