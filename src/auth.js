@@ -8,6 +8,9 @@ export function getToken() {
   }
 }
 
+// Text for an alert: the API's own message, or a generic one when the request never got an answer.
+export const errorText = (err) => (err?.status ? err.message : 'Failed to connect to server. Please try again.');
+
 // <img> can't send headers, so receipt URLs carry the token as a query param.
 export const withToken = (url) => {
   const token = getToken();
@@ -16,6 +19,8 @@ export const withToken = (url) => {
 
 // Every API call goes through fetch, so add the token here once instead
 // of at each call site. A 401 means the token is missing/expired: back to login.
+// Any non-2xx rejects with the server's `error` message (err.status set), so an
+// error payload never gets stored where a list/object was expected.
 export function installAuthFetch(apiUrl, onUnauthorized = () => location.reload()) {
   const original = globalThis.fetch.bind(globalThis);
   globalThis.fetch = async (input, init = {}) => {
@@ -29,6 +34,10 @@ export function installAuthFetch(apiUrl, onUnauthorized = () => location.reload(
     if (res.status === 401) {
       localStorage.removeItem(KEY);
       onUnauthorized();
+    }
+    if (!res.ok) {
+      const data = await res.clone().json().catch(() => ({}));
+      throw Object.assign(new Error(data.error || `Request failed (${res.status})`), { status: res.status });
     }
     return res;
   };

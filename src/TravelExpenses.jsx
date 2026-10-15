@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { PlusCircle, Trash2, Edit2, X, Check, Calendar, Search, Plane, RefreshCw, MapPin, Loader2, ArrowRight } from 'lucide-react';
 import { AmountBox, Terbilang, CategoryChip, Dialog, Field, Empty, SectionTitle, formatNumber } from './ui';
 import { localDate } from './dates';
+import { errorText } from './auth';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 const TRAVEL_API = `${API_URL}/api/travel-expenses`;
@@ -117,11 +118,6 @@ function TravelExpenses({ formatCurrency }) {
     setRateError('');
     try {
       const res = await fetch(`${TRAVEL_API}/exchange-rate?from=${expenseForm.currency}&to=${expenseForm.converted_currency}`);
-      if (!res.ok) {
-        const data = await res.json();
-        setRateError(data.error || 'Failed to fetch rate');
-        return;
-      }
       const data = await res.json();
       const rate = data.rate;
       setExpenseForm(prev => ({
@@ -129,8 +125,8 @@ function TravelExpenses({ formatCurrency }) {
         exchange_rate: String(rate),
         converted_amount: prev.amount ? String(Math.round(parseFloat(prev.amount) * rate)) : ''
       }));
-    } catch {
-      setRateError('Failed to reach exchange rate service');
+    } catch (err) {
+      setRateError(err.status ? err.message : 'Failed to reach exchange rate service');
     } finally {
       setRateLoading(false);
     }
@@ -167,17 +163,11 @@ function TravelExpenses({ formatCurrency }) {
         notes: expenseForm.notes || null
       };
 
-      const res = await fetch(url, {
+      await fetch(url, {
         method: editingExpenseId ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        alert(errorData.error || `Failed to ${editingExpenseId ? 'update' : 'save'} travel expense`);
-        return;
-      }
 
       resetExpenseForm();
       await fetchExpenses();
@@ -186,7 +176,7 @@ function TravelExpenses({ formatCurrency }) {
       setTrips(await tripsRes.json());
     } catch (error) {
       console.error('Error submitting travel expense:', error);
-      alert('Failed to connect to server. Please try again.');
+      alert(errorText(error));
     } finally {
       setSubmittingExpense(false);
     }
@@ -255,17 +245,11 @@ function TravelExpenses({ formatCurrency }) {
         ? `${TRAVEL_API}/categories/${editingCategoryId}`
         : `${TRAVEL_API}/categories`;
 
-      const res = await fetch(url, {
+      await fetch(url, {
         method: editingCategoryId ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(categoryForm)
       });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        alert(errorData.error || `Failed to ${editingCategoryId ? 'update' : 'save'} category`);
-        return;
-      }
 
       setShowCategoryForm(false);
       setEditingCategoryId(null);
@@ -274,7 +258,7 @@ function TravelExpenses({ formatCurrency }) {
       setCategories(await catRes.json());
     } catch (error) {
       console.error('Error submitting category:', error);
-      alert('Failed to connect to server. Please try again.');
+      alert(errorText(error));
     } finally {
       setSubmittingCategory(false);
     }
@@ -282,14 +266,13 @@ function TravelExpenses({ formatCurrency }) {
 
   async function handleDeleteCategory(id) {
     if (!confirm('Delete this travel category?')) return;
-    const res = await fetch(`${TRAVEL_API}/categories/${id}`, { method: 'DELETE' });
-    if (!res.ok) {
-      const data = await res.json();
-      alert(data.error || 'Failed to delete');
-      return;
+    try {
+      await fetch(`${TRAVEL_API}/categories/${id}`, { method: 'DELETE' });
+      const catRes = await fetch(`${TRAVEL_API}/categories`);
+      setCategories(await catRes.json());
+    } catch (err) {
+      alert(errorText(err));
     }
-    const catRes = await fetch(`${TRAVEL_API}/categories`);
-    setCategories(await catRes.json());
   }
 
   const formatAmount = (amount, currency) => {
