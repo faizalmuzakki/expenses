@@ -85,13 +85,14 @@ function TravelExpenses({ formatCurrency }) {
     setLoading(false);
   }
 
-  async function fetchExpenses() {
+  // Pass the new filters when setting them in the same handler: state isn't updated yet.
+  async function fetchExpenses(f = filters) {
     const params = new URLSearchParams();
-    if (filters.startDate) params.set('startDate', filters.startDate);
-    if (filters.endDate) params.set('endDate', filters.endDate);
-    if (filters.categoryId) params.set('categoryId', filters.categoryId);
-    if (filters.currency) params.set('currency', filters.currency);
-    if (filters.tripName) params.set('tripName', filters.tripName);
+    if (f.startDate) params.set('startDate', f.startDate);
+    if (f.endDate) params.set('endDate', f.endDate);
+    if (f.categoryId) params.set('categoryId', f.categoryId);
+    if (f.currency) params.set('currency', f.currency);
+    if (f.tripName) params.set('tripName', f.tripName);
     params.set('limit', '100');
 
     const res = await fetch(`${TRAVEL_API}?${params}`);
@@ -413,7 +414,7 @@ function TravelExpenses({ formatCurrency }) {
             </div>
             <div className="mt-4 flex gap-2">
               <button
-                onClick={fetchExpenses}
+                onClick={() => fetchExpenses()}
                 className="btn-primary"
               >
                 <Search className="w-4 h-4" />
@@ -421,8 +422,9 @@ function TravelExpenses({ formatCurrency }) {
               </button>
               <button
                 onClick={() => {
-                  setFilters({ startDate: '', endDate: '', categoryId: '', currency: '', tripName: '' });
-                  setTimeout(fetchExpenses, 0);
+                  const cleared = { startDate: '', endDate: '', categoryId: '', currency: '', tripName: '' };
+                  setFilters(cleared);
+                  fetchExpenses(cleared);
                 }}
                 className="btn-quiet"
               >
@@ -874,9 +876,10 @@ function TravelExpenses({ formatCurrency }) {
                     </span>
                     <button
                       onClick={() => {
-                        setFilters(p => ({ ...p, tripName: trip.trip_name }));
+                        const next = { ...filters, tripName: trip.trip_name };
+                        setFilters(next);
                         setActiveView('expenses');
-                        setTimeout(fetchExpenses, 0);
+                        fetchExpenses(next);
                       }}
                       className="inline-flex items-center gap-1 text-sm font-semibold text-carbon hover:text-carbon-hover"
                     >
