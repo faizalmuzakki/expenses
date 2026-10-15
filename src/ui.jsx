@@ -9,6 +9,14 @@ export { terbilang };
 export const formatNumber = (n) =>
   new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 }).format(Number(n) || 0);
 
+// Spread onto amount <input type="number">s: no sign or exponent keys, and no decimals for Rupiah.
+// min/step also make the browser reject a pasted negative on submit.
+export const amountInput = ({ decimals = false } = {}) => ({
+  min: 0,
+  step: decimals ? 'any' : 1,
+  onKeyDown: (e) => { if ((decimals ? /^[-+eE]$/ : /^[-+eE.,]$/).test(e.key)) e.preventDefault(); },
+});
+
 const TONE = { in: 'text-in', out: 'text-out', ink: 'text-ink', carbon: 'text-carbon' };
 
 // The kwitansi amount box: hatched "Rp" tab + tabular figure.
@@ -17,7 +25,7 @@ export function AmountBox({ value, tone = 'ink', sign = '', size = 'md', currenc
   return (
     <div className={`amount-box ${className}`}>
       <span className="amount-rp">{currency}</span>
-      <span className={`amount-fig ${fig} ${TONE[tone]}`}>{sign}{formatNumber(value)}</span>
+      <span className={`amount-fig ${fig} ${TONE[tone]}`}>{sign}{formatNumber(sign ? Math.abs(value) : value)}</span>
     </div>
   );
 }
@@ -43,7 +51,7 @@ export function SignedAmount({ type, amount, formatCurrency, className = '' }) {
   const isIn = type === 'income';
   return (
     <span className={`num font-semibold ${isIn ? 'text-in' : 'text-ink'} ${className}`}>
-      {isIn ? '+' : '−'}{formatCurrency(amount)}
+      {isIn ? '+' : '−'}{formatCurrency(Math.abs(amount))}
     </span>
   );
 }

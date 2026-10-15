@@ -9,7 +9,7 @@ import {
     Settings, PlusCircle, Check,
     Target, Wallet, Edit2, History, AlertCircle, Shield, Building2, Briefcase, Loader2
 } from 'lucide-react';
-import { AmountBox, Terbilang, Dialog, Field, Empty, SectionTitle } from './ui';
+import { AmountBox, Terbilang, Dialog, Field, Empty, SectionTitle, amountInput } from './ui';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -439,7 +439,7 @@ export default function InvestmentTracker({ formatCurrency }) {
                     </>}
                 >
                     <Field label="Monthly Budget (IDR)">
-                        <div className="amount-box focus-within:border-carbon focus-within:shadow-[0_0_0_3px_var(--carbon-soft)]"><span className="amount-rp">Rp</span><input type="number" value={config.monthly_budget} onChange={(e) => setConfig({ monthly_budget: e.target.value })} inputMode="numeric" className="amount-fig h-12 text-lg bg-transparent outline-none" /></div>
+                        <div className="amount-box focus-within:border-carbon focus-within:shadow-[0_0_0_3px_var(--carbon-soft)]"><span className="amount-rp">Rp</span><input type="number" {...amountInput()} value={config.monthly_budget} onChange={(e) => setConfig({ monthly_budget: e.target.value })} inputMode="numeric" className="amount-fig h-12 text-lg bg-transparent outline-none" /></div>
                     </Field>
                     <Terbilang value={config.monthly_budget} className="mt-2" />
                 </Dialog>
@@ -498,6 +498,7 @@ export default function InvestmentTracker({ formatCurrency }) {
                             <Field label="Amount (IDR)">
                                 <div className="amount-box focus-within:border-carbon focus-within:shadow-[0_0_0_3px_var(--carbon-soft)]"><span className="amount-rp">Rp</span><input
                                     type="number"
+                                    {...amountInput()}
                                     required
                                     disabled={submittingContribute}
                                     value={contributeForm.amount}
@@ -552,6 +553,7 @@ export default function InvestmentTracker({ formatCurrency }) {
                                     <Field label={cfg?.name || h.type}>
                                         <div className="amount-box focus-within:border-carbon focus-within:shadow-[0_0_0_3px_var(--carbon-soft)]"><span className="amount-rp">Rp</span><input
                                             type="number"
+                                            {...amountInput()}
                                             value={holdingsForm[h.type]?.current_value ?? 0}
                                             onChange={(e) => setHoldingsForm(prev => ({
                                                 ...prev,
@@ -567,6 +569,7 @@ export default function InvestmentTracker({ formatCurrency }) {
                                         <Field label="Current Gold (grams)" className="mt-3">
                                             <input
                                                 type="number"
+                                                {...amountInput({ decimals: true })}
                                                 step="0.01"
                                                 value={holdingsForm[h.type]?.current_grams ?? 0}
                                                 onChange={(e) => setHoldingsForm(prev => ({

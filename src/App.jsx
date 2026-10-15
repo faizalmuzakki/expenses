@@ -4,7 +4,7 @@ import Login from './Login';
 import { installAuthFetch, withToken, errorText } from './auth';
 import InvestmentTracker from './InvestmentTracker';
 import TravelExpenses from './TravelExpenses';
-import { AmountBox, Terbilang, CategoryChip, SignedAmount, Dialog, Field, Empty, SectionTitle, TabErrorBoundary } from './ui';
+import { AmountBox, Terbilang, CategoryChip, SignedAmount, Dialog, Field, Empty, SectionTitle, TabErrorBoundary, amountInput } from './ui';
 import { localDate, startOfMonth } from './dates';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
@@ -687,6 +687,7 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
                   <span className="amount-rp">Rp</span>
                   <input
                     type="number"
+                    {...amountInput()}
                     inputMode="numeric"
                     required
                     disabled={submitting}
