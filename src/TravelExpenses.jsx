@@ -227,11 +227,20 @@ function TravelExpenses({ formatCurrency }) {
   async function handleDeleteExpense(id, e) {
     e?.stopPropagation();
     if (!confirm('Delete this travel expense?')) return;
-    await fetch(`${TRAVEL_API}/${id}`, { method: 'DELETE' });
+    try {
+      await fetch(`${TRAVEL_API}/${id}`, { method: 'DELETE' });
+    } catch (err) {
+      alert(errorText(err));
+      return;
+    }
     setSelectedExpense(null);
-    await fetchExpenses();
-    const tripsRes = await fetch(`${TRAVEL_API}/trips`);
-    setTrips(await tripsRes.json());
+    try {
+      await fetchExpenses();
+      const tripsRes = await fetch(`${TRAVEL_API}/trips`);
+      setTrips(await tripsRes.json());
+    } catch (err) {
+      console.error('Error refreshing travel expenses:', err);
+    }
   }
 
   // Category CRUD
