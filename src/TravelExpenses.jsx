@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { localDate } from './dates';
 import { PlusCircle, Trash2, Edit2, X, Check, Calendar, Search, Plane, RefreshCw, ChevronDown, ChevronUp, MapPin, Loader2 } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -33,7 +34,7 @@ function TravelExpenses({ formatCurrency }) {
     description: '',
     vendor: '',
     category_id: '',
-    date: new Date().toISOString().split('T')[0],
+    date: localDate(),
     trip_name: '',
     source: 'manual',
     notes: ''
@@ -204,7 +205,7 @@ function TravelExpenses({ formatCurrency }) {
       description: '',
       vendor: '',
       category_id: '',
-      date: new Date().toISOString().split('T')[0],
+      date: localDate(),
       trip_name: '',
       source: 'manual',
       notes: ''

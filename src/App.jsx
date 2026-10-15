@@ -4,6 +4,7 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveCo
 import Login from './Login';
 import InvestmentTracker from './InvestmentTracker';
 import TravelExpenses from './TravelExpenses';
+import { localDate, startOfMonth } from './dates';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -21,8 +22,8 @@ function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState({
-    startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0]
+    startDate: startOfMonth(),
+    endDate: localDate()
   });
   const [allTime, setAllTime] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -464,7 +465,7 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
     description: '',
     vendor: '',
     category_id: '',
-    date: new Date().toISOString().split('T')[0],
+    date: localDate(),
     type: 'expense'
   });
 
@@ -506,7 +507,7 @@ function TransactionList({ expenses, categories, formatCurrency, onRefresh }) {
 
       setShowForm(false);
       setEditingId(null);
-      setForm({ amount: '', description: '', vendor: '', category_id: '', date: new Date().toISOString().split('T')[0], type: 'expense' });
+      setForm({ amount: '', description: '', vendor: '', category_id: '', date: localDate(), type: 'expense' });
       onRefresh();
     } catch (err) {
       console.error('Error submitting transaction:', err);
